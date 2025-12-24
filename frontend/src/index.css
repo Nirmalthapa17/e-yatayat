@@ -1,68 +1,612 @@
+/* frontend/src/index.css */
+
+/* --- ROOT CONFIG --- */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --sidebar-width: 260px;
+  --primary-color: #0d6efd;
+  --bg-light: #f8f9fa;
+  --bg-soft-danger: #fee2e2;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
   margin: 0;
+  padding: 0;
+  overflow: hidden;
+  /* Main wrapper handles scrolling */
+}
+
+/* --- DASHBOARD WRAPPER --- */
+.dashboard-wrapper {
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-light);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* --- SIDEBAR STYLES --- */
+.sidebar {
+  width: var(--sidebar-width);
+  background: white;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem;
+  flex-shrink: 0;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+.sidebar-brand {
+  margin-bottom: 3rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  color: #6c757d;
+  padding: 0.8rem 1.2rem;
+  border-radius: 10px;
+  text-decoration: none;
   font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: all 0.2s;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.nav-link.active,
+.nav-link:hover {
+  background-color: #e7f0ff;
+  color: var(--primary-color) !important;
+}
+
+/* --- MAIN CONTENT STYLES --- */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.content-header {
+  height: 70px;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.header-search input {
+  width: 350px;
+  background-color: #f1f3f4;
+  border: none;
+  border-radius: 20px;
+  padding: 10px;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap : 0.5rem;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: bold;
+}
+
+.content-body {
+  padding: 2.5rem;
+}
+
+/* --- COMPONENT STYLING --- */
+.card {
+  border-radius: 16px !important;
+  transition: transform 0.2s;
+}
+
+.bg-soft-danger {
+  background-color: var(--bg-soft-danger) !important;
+}
+
+.bg-soft-warning {
+  background-color: #fff9db !important;
+}
+
+/* Custom Table Polish */
+.table {
+  margin-top: 1rem;
+}
+
+.table thead th {
+  background-color: transparent;
+  border-bottom: 2px solid #f1f3f4;
+  color: #adb5bd;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Hide horizontal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+
+
+/* --- MODERN STYLING FOR EXISTING PROFILE PREVIEW --- */
+
+.profile-preview-card {
+  background: #f0d7d7e2;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  margin-bottom:3rem;
+}
+
+/* 1. The Header Section (Photo Placeholder + Name) */
+.profile-preview-card .d-flex.align-items-center {
+  border-bottom: 2px solid #f8f9fa !important;
+  margin-bottom: 10px !important;
+}
+
+/* Enhancing the Circular Placeholder */
+.profile-preview-card .bg-light.rounded-circle {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%) !important;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+/* Adding a "User Icon" look to the empty circle using CSS */
+.profile-preview-card .bg-light.rounded-circle::after {
+  content: '👤';
+  font-size: 24px;
+  opacity: 0.5;
+}
+
+.profile-preview-card h4 {
+  font-weight: 700;
+  color: #2c3e50 !important;
+  letter-spacing: -0.5px;
+}
+
+/* 2. The Details Section */
+.profile-details {
+  background-color: rgba(247, 246, 246, 0.904);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #f1f3f4;
+  margin-bottom: 1rem;
+}
+
+.profile-details p {
+  color: #272728 !important;
+  margin-bottom: 12px !important;
+  display: flex;
+  font-size: 1rem;
+}
+
+.profile-details p strong {
+  color: #1a1c1d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 1rem;
+}
+
+/* 3. The Button */
+.btn-outline-secondary.btn-sm {
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: 600;
+  border: 1px solid #dbe9f7;
+  color: #181a1c;
+  background-color: #cdc6c6;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-secondary.btn-sm:hover {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(13, 110, 253, 0.15);
+}
+
+
+/* --- QUICK RENEWAL SECTION STYLING --- */
+/* --- RENEWAL CARD LOGIC --- */
+
+/* 1. The Card itself */
+.renewal-action-card {
+  background: #f1f3f4;
+  border-radius: 25px !important;
+  /* Slightly rounder for a modern app feel */
+  border: 0px solid rgba(249, 241, 241, 0.05) !important;
+  margin-bottom: 3rem;
+}
+
+/* 2. The Wrapper (Fixing the gap issues) */
+.renewal-buttons-wrapper .d-grid {
+  margin-top: 3rem ;
+  display: flex !important;
+  justify-content: left !important;
+  gap: 200px !important;
+  /* Proper spacing between buttons */
+}
+
+/* 3. The Buttons (Ignoring Bootstrap defaults) */
+.renewal-buttons-wrapper .btn-lg {
+  padding: 16px 30px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  text-transform: none;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  border: none !important;
+}
+
+/* Bluebook Button Priority */
+.renewal-buttons-wrapper .btn-primary {
+  background: linear-gradient(135deg, #6994d6, #3073ba) !important;
+  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3) !important;
+}
+
+/* License Button Priority */
+.renewal-buttons-wrapper .btn-success {
+  background: linear-gradient(135deg, #87e4b9, #28a745) !important;
+  box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3) !important;
+}
+
+/* Hover Physics */
+.renewal-buttons-wrapper .btn-lg:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 12px 20px rgba(215, 24, 24, 0.1) !important;
+  filter: brightness(1.1);
+}
+
+
+/* --- MY DOCUMENTS PAGE SPECIFIC POLISH --- */
+
+/* 1. Style the Active Reminders Card */
+.bg-soft-danger {
+  background-color: #fff5f5 !important;
+  color: #c53030 !important;
+  border-left: 4px solid #fc8181 !important;
+  /* Adds a priority stripe */
+  padding: 1rem 1.5rem !important;
+  margin-bottom: 3rem;
+  margin-top: 1rem;
+}
+
+.bg-soft-warning {
+  background-color: #fcf6f6 !important;
+  color: #e61515 !important;
+  font-size: large;
+}
+
+/* 2. Target the Document Records Card */
+/* This ensures the table inside this page has the same look as the dashboard */
+.main-content .card {
+  border-radius: 12px !important;
+  border: 1px solid #edf2f7 !important;
+}
+
+/* 3. Polish the Header Search on this page */
+.header-search h4 {
+  color: #16181b;
+  font-weight: 700;
+}
+
+/* 4. Fix Table Spacing inside the MyDocuments Card */
+.main-content .table-responsive {
+  margin-top: 10px;
+}
+/* --- FULL GRID TABLE STYLING --- */
+
+/* 1. Force borders on the table and cells */
+.table-responsive .table {
+  border: 2px solid #dee2e6 !important;
+  /* Outer border */
+  border-collapse: collapse !important;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.table-responsive .table th,
+.table-responsive .table td {
+  border: 1px solid #4f5152 !important;
+  /* Vertical and horizontal lines */
+  padding: 16px 15px !important;
+}
+
+/* 2. Style the Header for a "Record" look */
+.table-responsive thead.table-dark th {
+  background-color: #343a40 !important;
+  border-right: 1px solid #495057 !important;
+  /* Separator for header columns */
+  text-align: center;
+}
+
+/* 3. Center align the text for a cleaner grid feel */
+.table-responsive .table td {
+  text-align: center;
+}
+
+/* 4. Keep the first column (Document Type) left-aligned for readability */
+.table-responsive .table td:first-child,
+.table-responsive .table th:first-child {
+  text-align: left;
+}
+
+/* 5. Remove the background stripe to keep it a clean white grid */
+.table-striped>tbody>tr:nth-of-type(odd)>* {
+  --bs-table-accent-bg: transparent !important;
+  background-color: #ffffff !important;
+}
+
+/* 6. Subtle hover to help the eye track lines */
+.table-hover tbody tr:hover td {
+  background-color: #f4f9fd !important;
+}
+
+
+/* --- VEHICLE GARAGE STYLING --- */
+
+/* 1. The Card Container */
+.vehicle-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  border-top: 10px solid #0d6efd !important;
+  /* Blue "License Plate" accent */
+  border-radius: 10px !important;
+  border: #0d6efd;
+  margin-bottom: 3rem;
+  background: rgb(238, 238, 242);
+}
+
+.vehicle-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* 2. The Internal Data Box */
+.vehicle-data-box {
+  background-color: white;
+  border: 1px solid #3e82c7;
+  border-radius: 12px;
+  margin-top: 0.5rem;
+  margin-bottom: 3rem;
+  padding: 15px;
+}
+
+/* 3. Label and Value Styling */
+.vehicle-data-box label {
+  font-size: 0.9rem !important;
+  letter-spacing: 0.5px;
+  color: #151212 !important;
+  margin-bottom: 0px;
+  font-weight: 300;
+  margin-right: 15px;
+}
+
+.vehicle-data-box span {
+  font-size: 1rem;
+  color: #171d1f;
+  font-weight: 700;
+}
+
+/* 4. The Badge Overrides */
+.bg-primary-subtle {
+
+  color: #1161da !important;
+  font-size: 25px;
+}
+
+/* 5. Custom Horizontal Line */
+.vehicle-card hr {
+  margin: 0.9rem 0;
+  border-top: 1px solid #e9ecef;
+}
+
+
+
+
+/* --- NOTIFICATION STYLING --- */
+
+.bg-light-danger {
+  background-color: #fff5f5 !important;
+}
+
+.bg-light-warning {
+  background-color: #fffdf5 !important;
+}
+
+.bg-light-primary {
+  background-color: #f5faff !important;
+}
+
+.border-danger {
+  border-color: #dc3545 !important;
+}
+
+.border-warning {
+  border-color: #ffc107 !important;
+}
+
+.border-primary {
+  border-color: #0d6efd !important;
+}
+
+/* Animation when hovering over a notification */
+.main-content .card.border-start:hover {
+  transform: translateX(5px);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+
+
+/* --- SETTINGS PAGE CUSTOM OVERRIDES --- */
+
+/* 1. Make Form Inputs look modern (not like old Windows) */
+.form-control {
+  padding: 12px 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  background-color: #f8fafc !important;
+  transition: all 0.2s ease !important;
+}
+
+.form-control:focus {
+  background-color: #fff !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1) !important;
+}
+
+/* 2. Custom Styling for the Switch (The Toggle) */
+.form-check-input:checked {
+  background-color: #10b981 !important;
+  /* Green for ON */
+  border-color: #10b981 !important;
+}
+
+.form-check-input {
+  width: 3em !important;
+  height: 1.5em !important;
+  cursor: pointer !important;
+}
+
+/* 3. Style the List Items in Preferences */
+.list-group-item {
+  padding: 20px 0 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+
+/* --- SMART CARD UI STYLING --- */
+.license-card-container {
+  max-width: 500px;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.license-side-bar {
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+}
+
+.license-side-bar span {
+  transform: rotate(-90deg);
+  color: white;
+  font-weight: 800;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+
+.license-main-content {
+  flex-grow: 1;
+  /* Subtle Guilloche/ID Pattern background */
+  background-color: #ffffff;
+  background-image: radial-gradient(#e9ecef 0.5px, transparent 0.5px);
+  background-size: 10px 10px;
+}
+
+.tiny-label {
+  font-size: 0.55rem;
+  color: #888;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+/* --- UNIVERSAL SMART CARD STYLING --- */
+.smart-card-container {
+  width: 100%;
+  max-width: 500px;
+  background: #fff;
+  border-radius: 14px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+  transition: transform 0.2s ease;
+}
+
+.smart-card-container:hover {
+  transform: translateY(-5px);
+}
+
+/* Vertical Status Bar */
+.card-status-bar {
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.card-status-bar span {
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.card-content {
+  flex: 1;
+  padding: 1.25rem;
+  background-image: radial-gradient(#cbd5e1 0.5px, transparent 0.5px);
+  background-size: 12px 12px;
+  /* Subtle security pattern */
+}
+
+.card-header-text h6 {
+  font-size: 0.55rem;
+  letter-spacing: 0.5px;
+  margin: 0;
+  color: #64748b;
+}
+
+.data-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 1px;
+}
+
+.data-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
 }
