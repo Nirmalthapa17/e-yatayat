@@ -1,95 +1,94 @@
-// frontend/src/components/DocumentStatusTable.jsx
-
 import React from 'react';
-
-// *** MOCK DATA *** // 
-// This array simulates the documents associated with the user, 
-// which would be fetched from the backend.
-const mockDocuments = [
-    {
-        id: 1,
-        type: "Driving License",
-        number: "BA 10 KA 1234",
-        expiryDate: "2026/03/15", // Next year
-        status: "Active",
-    },
-    {
-        id: 2,
-        type: "Vehicle Bluebook",
-        number: "LU 15 PA 5678",
-        expiryDate: "2025/12/30", // Close to expiration!
-        status: "Active",
-    },
-    {
-        id: 3,
-        type: "Vehicle Bluebook",
-        number: "KO 03 TA 9012",
-        expiryDate: "2024/07/20", // Expired
-        status: "Expired",
-    },
-];
 
 // Helper function to check if a document is close to expiring (within 90 days)
 const isExpiringSoon = (expiryDate) => {
+    if (!expiryDate || expiryDate === "Permanent") return false;
     const today = new Date();
     const expiry = new Date(expiryDate);
     const diffTime = expiry - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // Highlight if expiring in less than 90 days but is NOT already expired
     return diffDays > 0 && diffDays <= 90;
 };
 
-const DocumentStatusTable = () => {
+const DocumentStatusTable = ({ user, vehicle }) => {
+
+    // *** DATABASE DATA MAPPING *** // 
+    // We transform the props from the database into a list the table can loop through
+    const realDocuments = [
+        {
+            id: 'citizenship',
+            type: "Citizenship Certificate",
+            number: user?.citizenshipNumber || "Pending",
+            expiryDate: "Permanent", 
+            status: user?.isVerified ? "Verified" : "Under Review",
+        },
+        {
+            id: 'bluebook',
+            type: "Vehicle Bluebook",
+            number: vehicle?.vehicleNumber || user?.vehicleNumber || "N/A",
+            expiryDate: vehicle?.expiryDate ? new Date(vehicle.expiryDate).toISOString().split('T')[0] : "N/A",
+            status: vehicle ? "Active" : "Pending Approval",
+        }
+    ];
 
     return (
-        // Use 'table-responsive' to ensure table scrolls horizontally on small screens
         <div className="table-responsive"> 
-            {/* table-striped adds alternating row colors, table-hover highlights rows on mouseover */}
-            <table className="table  table-hover align-middle">
+            <table className="table table-hover align-middle">
                 <thead className="table-dark">
                     <tr>
                         <th>Document Type</th>
                         <th>Number</th>
                         <th>Expiry Date</th>
                         <th>Status</th>
-                        <th>Days Left</th>
+                        <th>Days Left / Remark</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {mockDocuments.map((doc) => {
+                    {realDocuments.map((doc) => {
                         const isSoon = isExpiringSoon(doc.expiryDate);
-                        const daysLeft = Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
                         
+                        // Calculate days left only for dated documents
+                        let daysLeft = null;
+                        if (doc.expiryDate !== "Permanent" && doc.expiryDate !== "N/A") {
+                            daysLeft = Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+                        }
+                        
+                        // Dynamic Styling Logic
                         let rowClass = '';
                         let statusBadgeClass = 'bg-secondary';
                         
-                        if (daysLeft <= 0) {
-                            rowClass = 'table-danger'; // Bootstrap's red for expired
+                        if (daysLeft !== null && daysLeft <= 0) {
+                            rowClass = 'table-danger'; 
                             statusBadgeClass = 'bg-danger';
                             doc.status = 'Expired';
                         } else if (isSoon) {
-                            rowClass = 'table-warning'; // Bootstrap's yellow for warning
+                            rowClass = 'table-warning'; 
                             statusBadgeClass = 'bg-warning text-dark';
-                        } else {
-                            statusBadgeClass = 'bg-success'; // Bootstrap's green for active
+                        } else if (doc.status === 'Verified' || doc.status === 'Active') {
+                            statusBadgeClass = 'bg-success';
                         }
 
                         return (
                             <tr key={doc.id} className={rowClass}>
                                 <td>{doc.type}</td>
-                                <td>{doc.number}</td>
+                                <td><code className="text-dark fw-bold">{doc.number}</code></td>
                                 <td>
                                     <strong>{doc.expiryDate}</strong>
                                 </td>
                                 <td>
-                                    {/* Use Bootstrap Badge class: 'badge' */}
                                     <span className={`badge ${statusBadgeClass}`}>
                                         {doc.status}
                                     </span>
                                 </td>
                                 <td>
-                                    {daysLeft > 0 ? `${daysLeft} days` : 'Overdue'}
+                                    {doc.expiryDate === "Permanent" ? (
+                                        <span className="text-muted">No Expiry</span>
+                                    ) : daysLeft !== null ? (
+                                        daysLeft > 0 ? `${daysLeft} days left` : <span className="fw-bold text-danger">Overdue</span>
+                                    ) : (
+                                        <span className="text-muted">N/A</span>
+                                    )}
                                 </td>
                             </tr>
                         );
@@ -97,10 +96,10 @@ const DocumentStatusTable = () => {
                 </tbody>
             </table>
             
-            {/* Simple Legend using Bootstrap utility colors */}
-            <div className="text-muted small mt-3">
+            <div className="text-muted small mt-3 d-flex align-items-center">
                 <span className="badge bg-warning text-dark me-2">Warning</span> Expiring in &lt; 90 days |
                 <span className="badge bg-danger ms-3 me-2">Danger</span> Expired 
+                <span className="ms-auto text-primary italic">Source: Digital Yatayat Official Records</span>
             </div>
         </div>
     );

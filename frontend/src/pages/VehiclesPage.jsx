@@ -1,13 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import VehicleCard from '../components/dashboard/VehicleCard';
 
 const VehiclesPage = () => {
-  // Mock data representing the user's vehicles
-  const myVehicles = [
-    { id: 1, plateNumber: "BA 15 PA 1234", type: "Private Car", model: "Hyundai i10", fuel: "Petrol", engine: "G4HG-123456", taxExpiry: "2025/10/12" },
-    { id: 2, plateNumber: "PRO-3-02-001 PA 9999", type: "Motorbike", model: "NS 200", fuel: "Petrol", engine: "BJX-987654", taxExpiry: "2024/11/05" }
-  ];
+  // 1. STATE: To hold real data instead of mock arrays
+  const [vehicleData, setVehicleData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Hardcoded ID for Nirmal Thapa
+  const userId = "694cbf278e07deb8dfe00958";
+
+  useEffect(() => {
+    const fetchGarageData = async () => {
+      try {
+        setLoading(true);
+        
+        // STEP A: Fetch user profile to get their specific vehicleNumber
+        const userResponse = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
+        const user = await userResponse.json();
+
+        // Check if user is verified and has a vehicle number
+        if (user.isVerified && user.vehicleNumber) {
+          
+          // STEP B: Fetch official record from VehicleMaster collection
+          const vehicleResponse = await fetch(`http://localhost:5000/api/user/vehicle-info/${user.vehicleNumber}`);
+          
+          if (!vehicleResponse.ok) {
+            throw new Error("Official vehicle record not found.");
+          }
+
+          const officialData = await vehicleResponse.json();
+          setVehicleData(officialData);
+        } else {
+          // User is either not verified or hasn't submitted a form
+          setVehicleData(null);
+        }
+      } catch (err) {
+        console.error("Fetch Error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGarageData();
+  }, []);
 
   return (
     <div className="dashboard-wrapper">
@@ -15,7 +53,7 @@ const VehiclesPage = () => {
       <aside className="sidebar">
         <div className="sidebar-brand"><h2 className="text-primary fw-bold m-0">e-Yatayat</h2></div>
         <nav className="sidebar-nav">
-          <Link to="/" className="nav-link">🏠 Dashboard</Link>
+          <Link to="/dashboard" className="nav-link">🏠 Dashboard</Link>
           <Link to="/documents" className="nav-link">📄 My Documents</Link>
           <Link to="/vehicles" className="nav-link active">🚗 Vehicle Info</Link>
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
@@ -26,13 +64,41 @@ const VehiclesPage = () => {
       {/* --- MAIN CONTENT --- */}
       <main className="main-content">
         <header className="content-header">
-           <h4 className="m-0  fw-bold ">My Digital Garage</h4>
-           <button className="btn btn-primary btn-sm">+ Add Vehicle</button>
+           <h4 className="m-0 fw-bold">My Digital Garage</h4>
+           <Link to="/verification-form" className="btn btn-primary btn-sm">+ Add/Update Vehicle</Link>
         </header>
 
         <div className="content-body">
           <div className="row">
-            {myVehicles.map(v => <VehicleCard key={v.id} vehicle={v} />)}
+            {loading ? (
+              <div className="col-12 text-center p-5">
+                <div className="spinner-border text-primary" role="status"></div>
+                <p className="mt-2">Fetching official records...</p>
+              </div>
+            ) : error ? (
+              <div className="col-12"><div className="alert alert-danger">{error}</div></div>
+            ) : vehicleData ? (
+              // Displaying the real data from VehicleMaster
+              <VehicleCard 
+                vehicle={{
+                  id: vehicleData._id,
+                  plateNumber: vehicleData.vehicleNumber,
+                  type: vehicleData.vehicleType || "Private",
+                  model: vehicleData.ownerName + "'s Vehicle", // Using Owner Name as model placeholder
+                  fuel: "Petrol/Diesel",
+                  engine: vehicleData.engineNumber || "SECURED",
+                  taxExpiry: vehicleData.expiryDate ? new Date(vehicleData.expiryDate).toLocaleDateString() : "N/A"
+                }} 
+              />
+            ) : (
+              <div className="col-12 text-center p-5">
+                <div className="alert alert-info shadow-sm">
+                  <h5>No Verified Vehicles Found</h5>
+                  <p className="small">Either your verification is pending or you haven't submitted your details yet.</p>
+                  <Link to="/verification-form" className="btn btn-primary btn-sm">Start Verification</Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

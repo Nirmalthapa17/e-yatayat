@@ -1,6 +1,9 @@
 import React from 'react';
 
 const VehicleCard = ({ vehicle }) => {
+  // Logic to check if tax is expired
+  const isExpired = new Date(vehicle.taxExpiry) < new Date();
+
   return (
     <div className="col-md-6 mb-4">
       <div className="card vehicle-card border-0 shadow-sm p-4 h-100">
@@ -15,8 +18,8 @@ const VehicleCard = ({ vehicle }) => {
         <div className="vehicle-data-box p-3 rounded-3" style={{ backgroundColor: '#f8f9fa' }}>
           <div className="row g-3">
             <div className="col-6">
-              <label className="d-block small text-muted text-uppercase fw-semibold">Model</label>
-              <span className="fw-medium">{vehicle.model}</span>
+              <label className="d-block small text-muted text-uppercase fw-semibold">Owner Record</label>
+              <span className="fw-medium text-truncate d-block">{vehicle.model}</span>
             </div>
             <div className="col-6">
               <label className="d-block small text-muted text-uppercase fw-semibold">Fuel Type</label>
@@ -30,7 +33,10 @@ const VehicleCard = ({ vehicle }) => {
               <hr className="my-2 opacity-50" />
               <div className="d-flex justify-content-between align-items-center">
                 <small className="text-muted">Tax Paid Until:</small>
-                <span className="small fw-bold text-success">{vehicle.taxExpiry}</span>
+                {/* Use the expiry logic to change color to red if expired */}
+                <span className={`small fw-bold ${isExpired ? 'text-danger' : 'text-success'}`}>
+                  {vehicle.taxExpiry} {isExpired && "(Expired)"}
+                </span>
               </div>
             </div>
           </div>
