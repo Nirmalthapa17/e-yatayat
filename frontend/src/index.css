@@ -15,7 +15,7 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+
   /* Main wrapper handles scrolling */
 }
 
@@ -242,31 +242,48 @@ body,
   /* Slightly rounder for a modern app feel */
   border: 0px solid rgba(249, 241, 241, 0.05) !important;
   margin-bottom: 3rem;
+  overflow: hidden;
+  /* Ensures nothing spills out of the rounded corners */
 }
 
-/* 2. The Wrapper (Fixing the gap issues) */
+/* 2. The Wrapper (FIXED: Handling spacing and overflow) */
 .renewal-buttons-wrapper .d-grid {
-  margin-top: 3rem ;
+  
+  margin-top: 1.5rem;
+  /* Reduced from 3rem to keep layout compact */
+  margin-bottom: 1rem;
   display: flex !important;
-  justify-content: left !important;
-  gap: 200px !important;
-  /* Proper spacing between buttons */
+  flex-wrap: wrap !important;
+  /* CRITICAL: Allows buttons to stack on smaller screens */
+  justify-content: center !important;
+  /* Center buttons for a balanced look */
+  gap: 20px !important;
+  /* Use a standard gap instead of 200px */
+  width: 100%;
 }
 
 /* 3. The Buttons (Ignoring Bootstrap defaults) */
 .renewal-buttons-wrapper .btn-lg {
-  padding: 16px 30px !important;
+  
+  padding: 5px 30px !important;
   border-radius: 12px !important;
   font-weight: 700 !important;
   text-transform: none;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
   border: none !important;
+  min-width: 220px;
+  /* Ensures buttons don't get too narrow */
+  flex: 1;
+  /* Makes buttons grow equally to fill the space */
+  max-width: 320px;
+  /* Prevents buttons from becoming too wide on huge monitors */
 }
 
 /* Bluebook Button Priority */
 .renewal-buttons-wrapper .btn-primary {
-  background: linear-gradient(135deg, #6994d6, #3073ba) !important;
+  background: linear-gradient(135deg, #70a7ee, #3073ba) !important;
   box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3) !important;
+  
 }
 
 /* License Button Priority */
@@ -278,93 +295,119 @@ body,
 /* Hover Physics */
 .renewal-buttons-wrapper .btn-lg:hover {
   transform: translateY(-5px) !important;
-  box-shadow: 0 12px 20px rgba(215, 24, 24, 0.1) !important;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15) !important;
+  /* Changed to dark shadow for better visibility */
   filter: brightness(1.1);
 }
 
+/* Disabled State Logic for non-verified users */
+.renewal-buttons-wrapper .btn-lg.disabled,
+.renewal-buttons-wrapper .btn-lg:disabled {
+  background: #dcdcdc !important;
+  color: #8e8e8e !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
 
 /* --- MY DOCUMENTS PAGE SPECIFIC POLISH --- */
 
-/* 1. Style the Active Reminders Card */
-.bg-soft-danger {
-  background-color: #fff5f5 !important;
-  color: #c53030 !important;
-  border-left: 4px solid #fc8181 !important;
-  /* Adds a priority stripe */
-  padding: 1rem 1.5rem !important;
-  margin-bottom: 3rem;
-  margin-top: 1rem;
-}
-
-.bg-soft-warning {
-  background-color: #fcf6f6 !important;
-  color: #e61515 !important;
-  font-size: large;
-}
-
-/* 2. Target the Document Records Card */
-/* This ensures the table inside this page has the same look as the dashboard */
-.main-content .card {
-  border-radius: 12px !important;
-  border: 1px solid #edf2f7 !important;
-}
-
-/* 3. Polish the Header Search on this page */
-.header-search h4 {
-  color: #16181b;
-  font-weight: 700;
-}
-
-/* 4. Fix Table Spacing inside the MyDocuments Card */
-.main-content .table-responsive {
-  margin-top: 10px;
-}
-/* --- FULL GRID TABLE STYLING --- */
-
-/* 1. Force borders on the table and cells */
+/* 1. Official Grid Table Styling (Force Sharp Borders) */
 .table-responsive .table {
-  border: 2px solid #dee2e6 !important;
-  /* Outer border */
+  border: 2px solid #343a40 !important;
+  /* Thick outer boundary */
   border-collapse: collapse !important;
   margin-bottom: 1rem;
-  width: 100%;
 }
 
 .table-responsive .table th,
 .table-responsive .table td {
-  border: 1px solid #4f5152 !important;
-  /* Vertical and horizontal lines */
-  padding: 16px 15px !important;
+  border: 1px solid #dee2e6 !important;
+  /* Clean inner grid lines */
+  padding: 14px 18px !important;
+  vertical-align: middle;
 }
 
-/* 2. Style the Header for a "Record" look */
+/* Header Styling */
 .table-responsive thead.table-dark th {
-  background-color: #343a40 !important;
-  border-right: 1px solid #495057 !important;
-  /* Separator for header columns */
+  background-color: #212529 !important;
+  border-bottom: 3px solid #0d6efd !important;
+  /* Professional blue accent */
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
   text-align: center;
 }
 
-/* 3. Center align the text for a cleaner grid feel */
+/* Alignments */
 .table-responsive .table td {
   text-align: center;
 }
 
-/* 4. Keep the first column (Document Type) left-aligned for readability */
 .table-responsive .table td:first-child,
 .table-responsive .table th:first-child {
   text-align: left;
+  /* Keep document name easy to read */
+  font-weight: 600;
 }
 
-/* 5. Remove the background stripe to keep it a clean white grid */
-.table-striped>tbody>tr:nth-of-type(odd)>* {
-  --bs-table-accent-bg: transparent !important;
-  background-color: #ffffff !important;
+/* 2. Style the Reminder Sections (Alerts) */
+.bg-danger-subtle.border-danger {
+  background-color: #fff5f5 !important;
+  border-left: 6px solid #dc3545 !important;
+  /* Stronger priority stripe */
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.1);
 }
 
-/* 6. Subtle hover to help the eye track lines */
+.bg-danger-subtle h3 {
+  color: #dc3545 !important;
+  font-size: 1.1rem;
+}
+
+/* 3. Document Records Card */
+.main-content .card {
+  border-radius: 15px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
+  overflow: hidden;
+}
+
+/* 4. Table Hover and Interaction */
 .table-hover tbody tr:hover td {
-  background-color: #f4f9fd !important;
+  background-color: #f8fbff !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Badge Polish inside Table */
+.table td .badge {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* 5. Avatar Polish */
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Fix for small text on mobile */
+@media (max-width: 768px) {
+
+  .table-responsive .table th,
+  .table-responsive .table td {
+    padding: 10px 8px !important;
+    font-size: 0.8rem;
+  }
 }
 
 
@@ -424,7 +467,23 @@ body,
   margin: 0.9rem 0;
   border-top: 1px solid #e9ecef;
 }
+.transition-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
 
+.transition-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.plate-header h3 {
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  border-left: 4px solid #0d6efd;
+}
 
 
 

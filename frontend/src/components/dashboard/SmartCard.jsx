@@ -17,7 +17,7 @@ const SmartCard = ({ type, data, colorClass }) => {
           <h6 className="m-0 fw-bold tiny-label">REPUBLIC OF NEPAL</h6>
           <h6 className="m-0 fw-bold tiny-label">DEPARTMENT OF TRANSPORT MANAGEMENT</h6>
           <h5 className="m-0 fw-bold text-primary" style={{ fontSize: '0.85rem', letterSpacing: '1px' }}>
-            {type === 'license' ? "NON-PROFESSIONAL DRIVER'S LICENSE" : "VEHICLE REGISTRATION (BLUEBOOK)"}
+            {type === 'license' ? "PROFESSIONAL DRIVER'S LICENSE" : "VEHICLE REGISTRATION (BLUEBOOK)"}
           </h5>
         </div>
 

@@ -4,101 +4,64 @@ const User = require('../models/User');
 const License = require('../models/License'); 
 const Vehicle = require('../models/Vehicle'); 
 
+
+
 /**
  * 1. GET FULL USER WALLET
  * Path: GET /api/user/profile/:id
+ * (Note: We use '/profile/:id' because '/api/user' is added in server.js)
  */
 router.get('/profile/:id', async (req, res) => {
-    try {
-        // Populates both license and vehicle arrays/objects
-        const user = await User.findById(req.params.id)
-            .populate('linkedLicense')
-            .populate('linkedVehicles');
+  try {
+    const user = await User.findById(req.params.id)
+      .populate('linkedLicense')   // Grabs full data from 'licenses' collection
+      .populate('linkedVehicles'); // Grabs full data from 'vehicles' collection
 
-        if (!user) {
-            return res.status(404).json({ msg: "User not found in Database" });
-        }
-        res.json(user);
-    } catch (err) {
-        console.error("Profile Fetch Error:", err.message);
-        res.status(500).json({ msg: "Server Error: Could not retrieve wallet" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    console.error("Profile Fetch Error:", err);
+    res.status(500).json({ message: "Error fetching dashboard data" });
+  }
 });
 
 /**
- * 2. SUBMIT VERIFICATION FORM (Handles optional License/Vehicle)
- * Path: PUT /api/user/submit-verification/:id
+ * 2. SUBMIT VERIFICATION FORM
+ * Path: PUT /api/user/submit-verification/:userId
  */
-router.put('/submit-verification/:id', async (req, res) => {
-    try {
-        const { 
-            vehicleNumber, 
-            licenseNumber, 
-            citizenshipNumber, 
-            citizenshipPath 
-        } = req.body;
-        
-        // Update user with whatever data they provided
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            { 
-                appliedVehicleNumber: vehicleNumber || "", 
-                appliedLicenseNumber: licenseNumber || "", 
-                appliedCitizenshipNumber: citizenshipNumber, 
-                citizenshipPath,
-                isVerified: false // Status resets to pending upon new submission
-            },
-            { new: true }
-        );
+router.put('/submit-verification/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { 
+      citizenshipNumber, 
+      appliedLicenseNumber, 
+      appliedVehicleNumber, 
+      appliedEngineNumber, 
+      appliedChassisNumber 
+    } = req.body;
 
-        res.json({ msg: "Verification request submitted successfully!", updatedUser });
-    } catch (err) {
-        console.error("Submission Error:", err.message);
-        res.status(500).json({ msg: "Server Error: Submission failed" });
-    }
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        citizenshipNumber,
+        appliedLicenseNumber,
+        appliedVehicleNumber,
+        appliedEngineNumber,
+        appliedChassisNumber,
+        verificationStatus: 'Pending'
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "Verification request submitted to Admin", user: updatedUser });
+  } catch (err) {
+    res.status(500).json({ message: "Error submitting form", error: err.message });
+  }
 });
 
-/**
- * 3. ADMIN APPROVAL (Flexible Linking Logic)
- * Path: PUT /api/user/approve/:id
- */
-router.put('/approve/:id', async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ msg: "User not found" });
 
-        // A. Link License if the user applied for it
-        if (user.appliedLicenseNumber) {
-            const officialLicense = await License.findOne({ 
-                licenseNumber: user.appliedLicenseNumber 
-            });
-            if (officialLicense) {
-                user.linkedLicense = officialLicense._id;
-            }
-        }
-
-        // B. Link Vehicle if the user applied for it
-        if (user.appliedVehicleNumber) {
-            const officialVehicle = await Vehicle.findOne({ 
-                vehicleNumber: user.appliedVehicleNumber 
-            });
-            // Ensure we don't add the same vehicle twice to the array
-            if (officialVehicle && !user.linkedVehicles.includes(officialVehicle._id)) {
-                user.linkedVehicles.push(officialVehicle._id);
-            }
-        }
-
-        user.isVerified = true;
-        await user.save();
-
-        res.json({ 
-            msg: "Verification complete. Documents linked where matches were found!", 
-            user 
-        });
-    } catch (err) {
-        console.error("Approval Error:", err.message);
-        res.status(500).json({ msg: "Server Error: Approval process failed" });
-    }
-});
 
 module.exports = router;

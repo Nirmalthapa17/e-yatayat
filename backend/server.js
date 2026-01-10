@@ -64,9 +64,8 @@ app.post('/login', async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error during login' });
   }
-});/*
+});
 
-// --- YOUR WALLET ROUTES ---
 app.use('/api/user', require('./routes/userRoutes'));
 
 // 3. Test Route
@@ -78,7 +77,31 @@ app.get('/', (req, res) => {
 app.use((req, res) => {
     res.status(404).send(`Route not found: ${req.originalUrl}`);
 });
-*/
+// Get user profile with populated linked data
+app.get('/api/user/profile/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate({
+        path: 'linkedLicense',
+        model: 'License' // Ensure this matches your License model name
+      })
+      .populate({
+        path: 'linkedVehicles',
+        model: 'Vehicle' // Ensure this matches your Vehicle model name
+      });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Send the full user object (now containing actual license/vehicle details)
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while fetching profile" });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

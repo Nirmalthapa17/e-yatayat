@@ -1,61 +1,115 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import NotificationItem from '../components/dashboard/NotificationItem';
 
 const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userId = "694cbf278e07deb8dfe00958"; // Nirmal's ID
+  const navigate = useNavigate();
+
+  const userId = localStorage.getItem("userId") || "694cbf278e07deb8dfe00958";
 
   useEffect(() => {
     const generateNotifications = async () => {
       try {
         setLoading(true);
-        // 1. Fetch User and Vehicle data
         const userRes = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
         const user = await userRes.json();
 
         let generatedNotes = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize time for accurate day calculation
 
-        if (user.isVerified && user.vehicleNumber) {
-          const vehRes = await fetch(`http://localhost:5000/api/user/vehicle-info/${user.vehicleNumber}`);
-          const vehicle = await vehRes.json();
+        if (user.linkedVehicles && user.linkedVehicles.length > 0) {
+          user.linkedVehicles.forEach((vehicle, index) => {
+            
+            // --- 1. TAX EXPIRY LOGIC ---
+            if (vehicle.taxExpiryDate) {
+              const taxExp = new Date(vehicle.taxExpiryDate);
+              const taxDiff = Math.ceil((taxExp - today) / (1000 * 60 * 60 * 24));
 
-          // 2. CALCULATION LOGIC
-          const expiry = new Date(vehicle.expiryDate);
-          const today = new Date();
-          const diffTime = expiry - today;
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              if (taxDiff < 0) {
+                generatedNotes.push({
+                  id: `tax-exp-${index}`,
+                  title: "Vehicle Tax Expired",
+                  message: `Tax for ${vehicle.vehicleNumber} expired ${Math.abs(taxDiff)} days ago. Please pay at the nearest Yatayat office or online.`,
+                  time: "Action Required",
+                  type: "urgent",
+                  read: false
+                });
+              } else if (taxDiff <= 30) {
+                generatedNotes.push({
+                  id: `tax-soon-${index}`,
+                  title: "Tax Renewal Due",
+                  message: `Vehicle tax for ${vehicle.vehicleNumber} is expiring in ${taxDiff} days.`,
+                  time: "Upcoming",
+                  type: "warning",
+                  read: false
+                });
+              }
+            }
 
-          // Logic A: If Expired
-          if (diffDays < 0) {
+            // --- 2. INSURANCE EXPIRY LOGIC ---
+            if (vehicle.insuranceExpiryDate) {
+              const insExp = new Date(vehicle.insuranceExpiryDate);
+              const insDiff = Math.ceil((insExp - today) / (1000 * 60 * 60 * 24));
+
+              if (insDiff < 0) {
+                generatedNotes.push({
+                  id: `ins-exp-${index}`,
+                  title: "Insurance Expired",
+                  message: `Insurance for ${vehicle.vehicleNumber} has expired. Driving without insurance is illegal.`,
+                  time: "Urgent",
+                  type: "urgent",
+                  read: false
+                });
+              } else if (insDiff <= 15) {
+                generatedNotes.push({
+                  id: `ins-soon-${index}`,
+                  title: "Insurance Expiring Soon",
+                  message: `Your insurance policy for ${vehicle.vehicleNumber} expires in ${insDiff} days.`,
+                  time: "Reminder",
+                  type: "warning",
+                  read: false
+                });
+              }
+            }
+          });
+        }
+
+        // 3. LICENSE NOTIFICATIONS
+        if (user.linkedLicense && user.linkedLicense.expiryDate) {
+          const lExpiry = new Date(user.linkedLicense.expiryDate);
+          const lDiff = Math.ceil((lExpiry - today) / (1000 * 60 * 60 * 24));
+
+          if (lDiff < 0) {
             generatedNotes.push({
-              id: 'note-1',
-              title: "Bluebook Expired",
-              message: `Your vehicle ${vehicle.vehicleNumber} bluebook expired ${Math.abs(diffDays)} days ago. Please renew immediately.`,
-              time: "Action Required",
+              id: 'lic-exp',
+              title: "License Expired",
+              message: "Your driving license is no longer valid. Apply for renewal immediately.",
+              time: "Critical",
               type: "urgent",
               read: false
             });
-          } 
-          // Logic B: If Expiring Soon (within 30 days)
-          else if (diffDays <= 30) {
+          } else if (lDiff <= 60) {
             generatedNotes.push({
-              id: 'note-1',
-              title: "Renewal Approaching",
-              message: `Your vehicle tax for ${vehicle.vehicleNumber} is due in ${diffDays} days.`,
-              time: "Upcoming",
+              id: 'lic-soon',
+              title: "License Renewal",
+              message: `Your driving license will expire in ${lDiff} days.`,
+              time: "Reminder",
               type: "warning",
               read: false
             });
           }
         }
 
-        // Add a general system notification so the page isn't empty
+        // 4. SYSTEM STATUS
         generatedNotes.push({
           id: 'note-sys',
           title: "Account Status",
-          message: user.isVerified ? "Your identity is fully verified. You have access to all digital features." : "Your verification is currently pending admin review.",
+          message: user.isVerified 
+            ? "Identity Verified: All digital documents are synced with government records." 
+            : "Verification Pending: Some documents may not be visible until approved.",
           time: "System",
           type: "info",
           read: true
@@ -70,7 +124,7 @@ const NotificationsPage = () => {
     };
 
     generateNotifications();
-  }, []);
+  }, [userId]);
 
   return (
     <div className="dashboard-wrapper">
@@ -86,19 +140,31 @@ const NotificationsPage = () => {
       </aside>
 
       <main className="main-content">
-        <header className="content-header d-flex justify-content-between">
-            <h1 className="h4 fw-bold m-0">Notifications</h1>
-            {notifications.length > 0 && <button className="btn btn-outline-primary btn-sm">Mark all as read</button>}
+        <header className="content-header d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 className="h4 fw-bold m-0 text-dark">Notifications</h1>
+            <p className="text-muted small m-0">Official compliance and renewal alerts</p>
+          </div>
+          {notifications.length > 0 && (
+            <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
+              Mark all as read
+            </button>
+          )}
         </header>
 
-        <div className="content-body" style={{ maxWidth: '800px' }}>
+        <div className="content-body" style={{ maxWidth: '850px' }}>
           {loading ? (
-            <p>Checking for updates...</p>
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status"></div>
+              <p className="mt-2 text-muted">Syncing with Department of Transport...</p>
+            </div>
           ) : notifications.length > 0 ? (
             notifications.map(n => <NotificationItem key={n.id} note={n} />)
           ) : (
-            <div className="text-center p-5 text-muted">
-               <p>No new notifications at this time.</p>
+            <div className="card border-0 shadow-sm text-center p-5">
+               <div className="display-4 mb-3">🛡️</div>
+               <h5 className="fw-bold">Your documents are secure</h5>
+               <p className="text-muted">No pending renewals or alerts at this time.</p>
             </div>
           )}
         </div>

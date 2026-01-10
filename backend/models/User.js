@@ -34,16 +34,31 @@ const mongoose = require('mongoose');
   
 });*/
 const UserSchema = new mongoose.Schema({
-  fullName: { type: String, required: false },
+  fullName: String,
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  
+  // Fields to store the form submission
+  citizenshipNumber: String,
+  appliedLicenseNumber: String,
+  appliedVehicleNumber: String,
+  appliedEngineNumber: String,
+  appliedChassisNumber: String,
+  
+  // Status of the request
+  verificationStatus: { 
+    type: String, 
+    enum: ['None', 'Pending', 'Approved', 'Rejected'], 
+    default: 'None' 
+  },
 
-  verified: { type: Boolean, default: false },
-
-  verificationCode: { type: String },
-  codeExpires: { type: Date }  
+  // Final links to Master DB (filled after Admin Approval)
+  linkedVehicles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' }],
+  linkedLicense: { type: mongoose.Schema.Types.ObjectId, ref: 'License' ,
+  default: null},
+  
+  isVerified: { type: Boolean, default: false }
 });
- 
 
 
 module.exports = mongoose.model('User', UserSchema);

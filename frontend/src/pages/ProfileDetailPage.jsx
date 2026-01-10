@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import SmartCard from '../components/dashboard/SmartCard';
 
 const ProfileDetailPage = () => {
   const [userData, setUserData] = useState(null);
   const [vehicleData, setVehicleData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Hardcoded ID for testing (Nirmal)
-  const userId = "694cbf278e07deb8dfe00958"; 
+  // LOGIC: Get the actual logged-in user ID from localStorage
+  const userId = localStorage.getItem("userId"); 
 
   useEffect(() => {
     const fetchWalletData = async () => {
+      if (!userId) {
+        navigate("/"); // Redirect to login if no session found
+        return;
+      }
+
       try {
-        // 1. Get User Profile
+        // 1. Get User Profile with populated data
         const userRes = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
         const user = await userRes.json();
         setUserData(user);
 
-        // 2. Get Vehicle Master only if user has a vehicleNumber
-        if (user && user.vehicleNumber) {
-          const vehRes = await fetch(`http://localhost:5000/api/user/vehicle-info/${user.vehicleNumber}`);
-          if (vehRes.ok) {
-            const vehicle = await vehRes.json();
-            setVehicleData(vehicle);
-          }
+        // 2. Logic: Use populated linkedVehicles instead of searching by number
+        if (user.linkedVehicles && user.linkedVehicles.length > 0) {
+          setVehicleData(user.linkedVehicles[0]); // Display the first linked vehicle
         }
       } catch (err) {
         console.error("Error fetching wallet data:", err);
@@ -33,7 +35,7 @@ const ProfileDetailPage = () => {
       }
     };
     fetchWalletData();
-  }, []);
+  }, [userId, navigate]);
 
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center vh-100">
@@ -46,28 +48,26 @@ const ProfileDetailPage = () => {
 
   return (
     <div className="dashboard-wrapper">
-      {/* 1. SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-brand">
             <h2 className="text-primary fw-bold m-0">e-Yatayat</h2>
         </div>
         <nav className="sidebar-nav">
-          <Link to="/" className="nav-link">🏠 Dashboard</Link>
-          <Link to="/profile-wallet" className="nav-link active">📄 My Documents</Link>
+          <Link to="/dashboard" className="nav-link">🏠 Dashboard</Link>
+          <Link to="/document" className="nav-link ">📄 My Documents</Link>
           <Link to="/vehicles" className="nav-link">🚗 Vehicle Info</Link>
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
           <Link to="/settings" className="nav-link">⚙️ Settings</Link>
         </nav>
       </aside>
 
-      {/* 2. MAIN CONTENT AREA */}
       <main className="main-content">
         <header className="content-header d-flex justify-content-between align-items-center mb-4">
             <div>
-                <Link to="/" className="text-decoration-none small text-muted">← Back to Dashboard</Link>
+                <Link to="/dashboard" className="text-decoration-none small text-muted">← Back to Dashboard</Link>
                 <h2 className="display-6 fw-bold m-0 mt-1">Digital Wallet</h2>
             </div>
-            <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
+            <button className="btn btn-outline-dark btn-sm" onClick={() => window.print()}>
                 🖨️ Print Documents
             </button>
         </header>
@@ -75,26 +75,35 @@ const ProfileDetailPage = () => {
         <div className="content-body">
           <div className="row">
             
-            {/* LOGIC: Render License Section only if licenseNumber exists */}
-            {userData?.licenseNumber && (
+            {/* LOGIC: Render License if linkedLicense object exists */}
+            {userData?.linkedLicense ? (
               <div className="col-lg-6 mb-4">
                 <h5 className="text-muted small fw-bold text-uppercase mb-3">Driver Identity</h5>
                 <SmartCard 
                   type="license" 
                   data={{
-                    name: userData.fullName,
-                    number: userData.licenseNumber,
-                    categories: "A, B", // Placeholder or fetch from DB
-                    bloodGroup: "B+VE",   // Placeholder or fetch from DB
-                    expiry: "2029-12-24" 
+                    name: userData.linkedLicense.fullName,
+                    number: userData.linkedLicense.licenseNumber,
+                    categories: userData.linkedLicense.categories?.join(", ") || "A, B",
+                    expiry: userData.linkedLicense.expiryDate,
+                    bloodGroup:userData.linkedLicense.bloodGroup
                   }} 
-                  colorClass="bg-primary"
+                  colorClass="bg-primary shadow"
                 />
+            
+              </div>
+            ) : (
+              <div className="col-lg-6 mb-4">
+                <h5 className="text-muted small fw-bold text-uppercase mb-3">Driver Identity</h5>
+                <div className="card p-5 text-center border-dashed bg-light">
+                    <p className="text-muted small">License not verified.</p>
+                    <Link to="/verification-form" className="btn btn-primary btn-sm mx-auto">Verify License</Link>
+                </div>
               </div>
             )}
             
-            {/* LOGIC: Render Vehicle Section only if vehicleData is found */}
-            {vehicleData && (
+            {/* LOGIC: Render Vehicle if vehicleData is found */}
+            {vehicleData ? (
               <div className="col-lg-6 mb-4">
                 <h5 className="text-muted small fw-bold text-uppercase mb-3">Vehicle Ownership</h5>
                 <SmartCard 
@@ -102,22 +111,37 @@ const ProfileDetailPage = () => {
                     data={{
                         owner: userData?.fullName || "Owner",
                         number: vehicleData.vehicleNumber,
-                        model: vehicleData.model,
+                        model: vehicleData.vehicleType || "Motorcycle",
                         engine: vehicleData.engineNumber,
-                        expiry: new Date(vehicleData.expiryDate).toLocaleDateString()
+                        expiry: vehicleData.taxExpiryDate
                     }} 
-                    colorClass={new Date(vehicleData.expiryDate) < new Date() ? 'bg-danger' : 'bg-success'}
+                    colorClass="bg-success shadow"
                 />
+                <div className="mt-4 text-center">
+    <Link 
+        to="/verification-form" 
+        className="btn btn-success btn-lg shadow-sm px-5 fw-bold" 
+        style={{ 
+            padding:10,
+            borderRadius: '12px', 
+            letterSpacing: '0.5px',
+            fontSize: '1rem',
+            minWidth: '200px' 
+          
+        }}
+    >
+        + Add New
+    </Link>
+</div>
               </div>
-            )}
-
-            {/* FALLBACK: If neither is found */}
-            {!userData?.licenseNumber && !vehicleData && (
-              <div className="col-12 text-center py-5">
-                <div className="alert alert-light border">
-                  <p className="mb-0 text-muted">No digital documents found. Please complete your verification.</p>
+            ) : (
+                <div className="col-lg-6 mb-4">
+                    <h5 className="text-muted small fw-bold text-uppercase mb-3">Vehicle Ownership</h5>
+                    <div className="card p-5 text-center border-dashed bg-light">
+                        <p className="text-muted small">No vehicles linked.</p>
+                        <Link to="/verification-form" className="btn btn-primary btn-sm mx-auto">Link Vehicle</Link>
+                    </div>
                 </div>
-              </div>
             )}
           </div>
         </div>
