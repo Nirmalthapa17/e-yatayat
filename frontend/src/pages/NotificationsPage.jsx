@@ -7,123 +7,168 @@ const NotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const userId = localStorage.getItem("userId") || "694cbf278e07deb8dfe00958";
+  const userId = localStorage.getItem("userId");
 
+  // --- LOGOUT LOGIC ---
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      localStorage.clear(); // Clears userId and any other session data
+      navigate("/"); // Redirects to login page
+    }
+  };
   useEffect(() => {
-    const generateNotifications = async () => {
+    const fetchAndGenerateNotifications = async () => {
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const userRes = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
-        const user = await userRes.json();
+        const response = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
+        const user = await response.json();
 
         let generatedNotes = [];
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize time for accurate day calculation
+        today.setHours(0, 0, 0, 0);
 
-        if (user.linkedVehicles && user.linkedVehicles.length > 0) {
-          user.linkedVehicles.forEach((vehicle, index) => {
-            
-            // --- 1. TAX EXPIRY LOGIC ---
-            if (vehicle.taxExpiryDate) {
-              const taxExp = new Date(vehicle.taxExpiryDate);
-              const taxDiff = Math.ceil((taxExp - today) / (1000 * 60 * 60 * 24));
+        // --- 1. OFFICIAL DATA ALERTS (Only if Government Approved) ---
+        if (user.verificationStatus === 'Approved') {
+          
+          // Vehicle Alerts
+          if (user.linkedVehicles && Array.isArray(user.linkedVehicles)) {
+            user.linkedVehicles.forEach((vehicle) => {
+              const vNum = vehicle.vehicleNumber;
 
-              if (taxDiff < 0) {
-                generatedNotes.push({
-                  id: `tax-exp-${index}`,
-                  title: "Vehicle Tax Expired",
-                  message: `Tax for ${vehicle.vehicleNumber} expired ${Math.abs(taxDiff)} days ago. Please pay at the nearest Yatayat office or online.`,
-                  time: "Action Required",
-                  type: "urgent",
-                  read: false
-                });
-              } else if (taxDiff <= 30) {
-                generatedNotes.push({
-                  id: `tax-soon-${index}`,
-                  title: "Tax Renewal Due",
-                  message: `Vehicle tax for ${vehicle.vehicleNumber} is expiring in ${taxDiff} days.`,
-                  time: "Upcoming",
-                  type: "warning",
-                  read: false
-                });
+              // Tax Expiry
+              if (vehicle.taxExpiryDate) {
+                const taxExp = new Date(vehicle.taxExpiryDate);
+                const diff = Math.ceil((taxExp - today) / (1000 * 60 * 60 * 24));
+
+                if (diff < 0) {
+                  generatedNotes.push({
+                    id: `tax-expired-${vNum}`,
+                    title: "Vehicle Tax Expired",
+                    message: `Tax for ${vNum} expired ${Math.abs(diff)} days ago. Please pay immediately.`,
+                    time: "Action Required",
+                    type: "urgent",
+                    priority: 1,
+                    read: false
+                  });
+                } else if (diff <= 30) {
+                  generatedNotes.push({
+                    id: `tax-due-${vNum}`,
+                    title: "Tax Renewal Due",
+                    message: `Vehicle tax for ${vNum} is expiring in ${diff} days.`,
+                    time: "Upcoming",
+                    type: "warning",
+                    priority: 2,
+                    read: false
+                  });
+                }
               }
-            }
 
-            // --- 2. INSURANCE EXPIRY LOGIC ---
-            if (vehicle.insuranceExpiryDate) {
-              const insExp = new Date(vehicle.insuranceExpiryDate);
-              const insDiff = Math.ceil((insExp - today) / (1000 * 60 * 60 * 24));
+              // Insurance Expiry
+              if (vehicle.insuranceExpiryDate) {
+                const insExp = new Date(vehicle.insuranceExpiryDate);
+                const diff = Math.ceil((insExp - today) / (1000 * 60 * 60 * 24));
 
-              if (insDiff < 0) {
-                generatedNotes.push({
-                  id: `ins-exp-${index}`,
-                  title: "Insurance Expired",
-                  message: `Insurance for ${vehicle.vehicleNumber} has expired. Driving without insurance is illegal.`,
-                  time: "Urgent",
-                  type: "urgent",
-                  read: false
-                });
-              } else if (insDiff <= 15) {
-                generatedNotes.push({
-                  id: `ins-soon-${index}`,
-                  title: "Insurance Expiring Soon",
-                  message: `Your insurance policy for ${vehicle.vehicleNumber} expires in ${insDiff} days.`,
-                  time: "Reminder",
-                  type: "warning",
-                  read: false
-                });
+                if (diff < 0) {
+                  generatedNotes.push({
+                    id: `ins-expired-${vNum}`,
+                    title: "Insurance Expired",
+                    message: `Insurance for ${vNum} has expired. Driving without it is illegal.`,
+                    time: "Urgent",
+                    type: "urgent",
+                    priority: 1,
+                    read: false
+                  });
+                }
               }
+            });
+          }
+
+          // License Alerts
+          if (user.linkedLicense && user.linkedLicense.expiryDate) {
+            const lExp = new Date(user.linkedLicense.expiryDate);
+            const diff = Math.ceil((lExp - today) / (1000 * 60 * 60 * 24));
+
+            if (diff < 0) {
+              generatedNotes.push({
+                id: 'license-expired',
+                title: "License Expired",
+                message: "Your driving license has expired. Please apply for renewal.",
+                time: "Critical",
+                type: "urgent",
+                priority: 1,
+                read: false
+              });
             }
-          });
-        }
-
-        // 3. LICENSE NOTIFICATIONS
-        if (user.linkedLicense && user.linkedLicense.expiryDate) {
-          const lExpiry = new Date(user.linkedLicense.expiryDate);
-          const lDiff = Math.ceil((lExpiry - today) / (1000 * 60 * 60 * 24));
-
-          if (lDiff < 0) {
-            generatedNotes.push({
-              id: 'lic-exp',
-              title: "License Expired",
-              message: "Your driving license is no longer valid. Apply for renewal immediately.",
-              time: "Critical",
-              type: "urgent",
-              read: false
-            });
-          } else if (lDiff <= 60) {
-            generatedNotes.push({
-              id: 'lic-soon',
-              title: "License Renewal",
-              message: `Your driving license will expire in ${lDiff} days.`,
-              time: "Reminder",
-              type: "warning",
-              read: false
-            });
           }
         }
 
-        // 4. SYSTEM STATUS
-        generatedNotes.push({
-          id: 'note-sys',
-          title: "Account Status",
-          message: user.isVerified 
-            ? "Identity Verified: All digital documents are synced with government records." 
-            : "Verification Pending: Some documents may not be visible until approved.",
-          time: "System",
-          type: "info",
-          read: true
-        });
+        // --- 2. IDENTITY VERIFICATION STATUS (Your Specific Schema Logic) ---
+        let identityNote = {};
+        
+        switch (user.verificationStatus) {
+          case 'Approved':
+            identityNote = {
+              id: 'id-status',
+              title: "Identity Verified",
+              message: "Government Verification Successful: Your account is fully synced with transport records.",
+              time: "Official",
+              type: "info",
+              priority: 3,
+              read: true
+            };
+            break;
+          case 'Pending':
+            identityNote = {
+              id: 'id-status',
+              title: "Verification Pending",
+              message: `Your application (Citizenship: ${user.citizenshipNumber}) is currently being reviewed by officials.`,
+              time: "System",
+              type: "warning",
+              priority: 2,
+              read: false
+            };
+            break;
+          case 'Rejected':
+            identityNote = {
+              id: 'id-status',
+              title: "Verification Rejected",
+              message: "Your identity form was rejected. Please re-check your Citizenship/License details and resubmit.",
+              time: "Action Required",
+              type: "urgent",
+              priority: 1,
+              read: false
+            };
+            break;
+          default: // 'None'
+            identityNote = {
+              id: 'id-status',
+              title: "Link Documents",
+              message: "Please fill the verification form to link your License and Bluebook to this account.",
+              time: "System",
+              type: "warning",
+              priority: 2,
+              read: false
+            };
+        }
+        generatedNotes.push(identityNote);
 
+        // Final Sort: Urgent items first
+        generatedNotes.sort((a, b) => a.priority - b.priority);
         setNotifications(generatedNotes);
+
       } catch (err) {
-        console.error("Notification Error:", err);
+        console.error("Failed to sync notifications:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    generateNotifications();
+    fetchAndGenerateNotifications();
   }, [userId]);
 
   return (
@@ -137,34 +182,39 @@ const NotificationsPage = () => {
           <Link to="/notifications" className="nav-link active">🔔 Notifications</Link>
           <Link to="/settings" className="nav-link">⚙️ Settings</Link>
         </nav>
+        {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
+        <div className="mt-auto p-3 border-top">
+          <button 
+            onClick={handleLogout}
+            className="btn btn-outline-danger btn-sm w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
+          >
+            <span>Logout</span>
+            <i className="bi bi-box-arrow-right"></i> 
+          </button>
+        </div>
       </aside>
 
       <main className="main-content">
         <header className="content-header d-flex justify-content-between align-items-center mb-4">
           <div>
             <h1 className="h4 fw-bold m-0 text-dark">Notifications</h1>
-            <p className="text-muted small m-0">Official compliance and renewal alerts</p>
+            <p className="text-muted small m-0">Official alerts from the Department of Transport</p>
           </div>
-          {notifications.length > 0 && (
-            <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
-              Mark all as read
-            </button>
-          )}
         </header>
 
         <div className="content-body" style={{ maxWidth: '850px' }}>
           {loading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status"></div>
-              <p className="mt-2 text-muted">Syncing with Department of Transport...</p>
+              <p className="mt-2 text-muted">Syncing official records...</p>
             </div>
           ) : notifications.length > 0 ? (
             notifications.map(n => <NotificationItem key={n.id} note={n} />)
           ) : (
             <div className="card border-0 shadow-sm text-center p-5">
                <div className="display-4 mb-3">🛡️</div>
-               <h5 className="fw-bold">Your documents are secure</h5>
-               <p className="text-muted">No pending renewals or alerts at this time.</p>
+               <h5 className="fw-bold">No active alerts</h5>
+               <p className="text-muted">You are all caught up with your transport compliance.</p>
             </div>
           )}
         </div>

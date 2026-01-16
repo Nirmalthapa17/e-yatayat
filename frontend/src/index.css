@@ -669,3 +669,17 @@ body,
   font-weight: 700;
   color: #1e293b;
 }
+
+/* qr part*/
+.max-width-mobile {
+  max-width: 500px;
+  /* Limits width so it doesn't look stretched on PC */
+}
+
+.rounded-4 {
+  border-radius: 1rem !important;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}

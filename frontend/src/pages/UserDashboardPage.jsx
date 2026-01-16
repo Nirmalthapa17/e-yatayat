@@ -10,30 +10,43 @@ const UserDashboardPage = () => {
 
   const userId = localStorage.getItem("userId"); 
 
+  // --- LOGOUT LOGIC ---
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      localStorage.clear(); // Clears userId and any other session data
+      navigate("/"); // Redirects to login page
+    }
+  };
+
   useEffect(() => {
+    let isMounted = true; // Prevents updating state on unmounted component
     const fetchDashboardData = async () => {
-      if (!userId) {
-        navigate("/");
-        return;
-      }
+      // Only navigate away if we are 100% sure there is no userId
+    const storedId = localStorage.getItem("userId");
+    if (!storedId) {
+      navigate("/");
+      return;
+    }
 
       try {
         const response = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
-        const data = await response.json();
-        
         if (response.ok) {
-          setUserData(data);
-        } else {
-          console.error("User not found");
-        }
+        const data = await response.json();
+        if (isMounted) setUserData(data);
+      } else if (response.status === 401) {
+        // Only kick out if the token/session is actually invalid
+        localStorage.clear();
+        navigate("/");
+      }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchDashboardData();
-  }, [userId, navigate]);
+  return () => { isMounted = false; }; // Cleanup
+}, [navigate]); // Only runs once on load
 
   // CSS for button alignment and overflow prevention
   const styles = {
@@ -60,6 +73,17 @@ const UserDashboardPage = () => {
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
           <Link to="/settings" className="nav-link">⚙️ Settings</Link>
         </nav>
+
+        {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
+        <div className="mt-auto p-3 border-top">
+          <button 
+            onClick={handleLogout}
+            className="btn btn-outline-danger btn-sm w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
+          >
+            <span>Logout</span>
+            <i className="bi bi-box-arrow-right"></i> 
+          </button>
+        </div>
       </aside>
 
       <main className="main-content">
@@ -107,36 +131,51 @@ const UserDashboardPage = () => {
                 <section className="renewal-action-card card border-0 shadow-sm p-4 text-center mb-4">
                    <div className="renewal-buttons-wrapper">
               <RenewalButtons 
-                isVerified={userData?.isVerified} 
-                hasLicense={!!userData?.linkedLicense}
+                verificationStatus={userData?.verificationStatus} 
+                hasLicense={!!userData?.linkedLicense} // The !! converts the object/null to a true/false
                 hasVehicle={userData?.linkedVehicles?.length > 0}
               />
             </div>
                 </section>
 
                 <section className="card border-0 shadow-sm p-4 mb-4 bg-white">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h3 className="h5 fw-bold text-dark m-0">Status Summary</h3>
-                  
-                  </div>
-                  
-                  {userData?.isVerified ? (
-                    <p className="text-muted mb-0 small">
-                      Your account is <span className="text-success fw-bold">Verified</span>. 
-                      You can now use all digital services.
-                    </p>
-                  ) : userData?.verificationStatus === "Pending" ? (
-                    <p className="text-muted mb-0 small">
-                      Your documents are currently <span className="text-info fw-bold">Under Review</span>. 
-                      Please wait for admin approval.
-                    </p>
-                  ) : (
-                    <p className="text-muted mb-0 small">
-                      Your account is currently <span className="text-warning fw-bold">Unverified</span>. 
-                      Please <Link to="/verification-form">submit your documents</Link> to continue.
-                    </p>
-                  )}
-                </section>
+  <div className="d-flex justify-content-between align-items-center mb-3">
+    <h3 className="h5 fw-bold text-dark m-0">Official Status Summary</h3>
+    <span className="badge bg-light text-muted border px-2 py-1" style={{ fontSize: '0.65rem' }}>
+      REF: {userData?.citizenshipNumber || 'MASTER-DB'}
+    </span>
+  </div>
+
+  {userData?.verificationStatus === "Approved" ? (
+    <div className="p-3 rounded-3" style={{ backgroundColor: '#f0fff4', borderLeft: '4px solid #28a745' }}>
+      <p className="text-dark mb-1 fw-bold small">✅ Account Fully Certified</p>
+      <p className="text-muted mb-0 small">
+        Your identity is verified. Digital documents for your license and linked vehicles are now active and synced with the national transport records.
+      </p>
+    </div>
+  ) : userData?.verificationStatus === "Pending" ? (
+    <div className="p-3 rounded-3" style={{ backgroundColor: '#fffaf0', borderLeft: '4px solid #ffc107' }}>
+      <p className="text-dark mb-1 fw-bold small">⏳ Verification in Progress</p>
+      <p className="text-muted mb-0 small">
+        Your application is currently under review by the department officials. Please check back later for updates on your document syncing.
+      </p>
+    </div>
+  ) : userData?.verificationStatus === "Rejected" ? (
+    <div className="p-3 rounded-3" style={{ backgroundColor: '#fff5f5', borderLeft: '4px solid #dc3545' }}>
+      <p className="text-danger mb-1 fw-bold small">❌ Verification Rejected</p>
+      <p className="text-muted mb-0 small">
+        The information provided does not match the government database. Please visit the settings or verification section to correct your details.
+      </p>
+    </div>
+  ) : (
+    <div className="p-3 rounded-3" style={{ backgroundColor: '#f8f9fa', borderLeft: '4px solid #6c757d' }}>
+      <p className="text-dark mb-1 fw-bold small">🛡️ Identity Unlinked</p>
+      <p className="text-muted mb-0 small">
+        No government identity has been linked to this account. Please initiate the verification process to access your digital license and bluebook.
+      </p>
+    </div>
+  )}
+</section>
               </div>
 
             </div>

@@ -305,3 +305,18 @@ body {
 .text-content {
     max-width: 600px;
 }
+.switch-link {
+    color: #ff7200;
+    /* Use your primary theme color (e.g., e-Yatayat orange) */
+    font-weight: bold;
+    cursor: pointer;
+    /* This shows the "hand" icon when hovering */
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.switch-link:hover {
+    color: #fff;
+    /* Changes color when hovering */
+    text-decoration: underline;
+}

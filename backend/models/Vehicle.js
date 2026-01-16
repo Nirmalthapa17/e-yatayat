@@ -7,34 +7,45 @@ const VehicleSchema = new mongoose.Schema({
     required: true, 
     unique: true,
     uppercase: true,
-    trim: true // Format: BAGMATI-125-PA-5566
+    trim: true // Example: BAGMATI-125-PA-5566
   },
   ownerName: { type: String, required: true },
-  
-  // --- TECHNICAL SPECS (Required for Nepal Bluebook) ---
+  ownerAddress: { type: String }, // As per the Bluebook record
+
+  // --- TECHNICAL SPECS (Bluebook Page 3) ---
   engineNumber: { type: String, required: true, unique: true },
   chassisNumber: { type: String, required: true, unique: true },
-  model: { type: String, required: true }, // e.g., "Pulsar 220F"
-  make: { type: String }, // e.g., "Bajaj"
-  manufactureYear: Number,
-  vehicleType: { type: String, enum: ['Car', 'Bike', 'Scooter', 'Bus', 'Truck'] },
-  cc: Number,
+  model: { type: String, required: true },
+  make: { type: String }, // e.g., Bajaj, Toyota
+  manufactureYear: { type: Number },
+  vehicleType: { type: String, enum: ['Car', 'Bike', 'Scooter', 'Bus', 'Truck', 'Tractor'] },
+  
+  // Advanced Specs for Tax Calculation
+  cc: { type: Number }, // Required for tax brackets in Nepal
   fuelType: { type: String, enum: ['Petrol', 'Diesel', 'Electric', 'Hybrid'], default: 'Petrol' },
-  color: { type: String },
+  cylinders: { type: Number, default: 1 },
+  seatingCapacity: { type: Number },
+  unladenWeight: { type: String }, // e.g., "150 kg"
 
   // --- REGISTRATION DETAILS ---
   registrationDate: { type: Date, required: true },
-  issuingOffice: { type: String, default: "Gurjudhara, Kathmandu" }, // Specific Nepal Transport Office
+  issuingOffice: { type: String, default: "Gurjudhara, Kathmandu" }, 
   
-  // --- BLUEBOOK VALIDITY & TAX ---
-  taxExpiryDate: { type: Date, required: true }, // The "Renew Date" in the Bluebook
+  // --- BLUEBOOK VALIDITY & TAX (The most important part for Renewals) ---
+  taxExpiryDate: { type: Date, required: true }, // Yearly tax renewal date
   insuranceCompany: { type: String },
-  insurancePolicyNumber: { type: String },
   insuranceExpiryDate: { type: Date },
+  
+  // Digital Copy Reference
+  officialBluebookPhoto: { type: String }, // Link to official master image
 
   // --- STATUS ---
-  isBlacklisted: { type: Boolean, default: false }, // If the vehicle is stolen or has unpaid fines
-  isVerifiedByAdmin: { type: Boolean, default: true } // Since this is master data, it's true by default
-});
+  isBlacklisted: { type: Boolean, default: false }, // Stolen or high fines
+  status: { 
+    type: String, 
+    enum: ['Active', 'Transferred', 'Scrapped'], 
+    default: 'Active' 
+  }
+}, { timestamps: true });
 
 module.exports = mongoose.model('Vehicle', VehicleSchema);

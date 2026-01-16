@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// IMPORTANT: Make sure this file exists in your components folder
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -19,7 +18,6 @@ function LandingPage() {
   // Monitor scroll for the "Back to Top" button
   useEffect(() => {
     const handleScroll = () => {
-      // Button appears after scrolling 500px down
       setShowScrollBtn(window.scrollY > 500);
     };
     window.addEventListener("scroll", handleScroll);
@@ -32,7 +30,6 @@ function LandingPage() {
 
   const showForm = (type) => {
     setFormType(type);
-    // Clear all inputs when switching forms
     setSignupFullName("");
     setSignupEmail("");
     setSignupPassword("");
@@ -41,12 +38,35 @@ function LandingPage() {
     setLoginPassword("");
   };
 
+  // --- PASSWORD VALIDATION LOGIC ---
+  const validatePassword = (pass) => {
+    // Requires: 8+ characters, 1 uppercase, 1 number, 1 special character
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
+    return regex.test(pass);
+  };
+
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Check if passwords match
     if (signupPassword !== signupConfirmPassword) {
       alert("Passwords do not match");
       return;
     }
+
+    // 2. Check password strength
+    if (!validatePassword(signupPassword)) {
+      alert(
+        "Password is too weak!\n\n" +
+        "Requirement:\n" +
+        "- Minimum 8 characters\n" +
+        "- At least one uppercase letter\n" +
+        "- At least one number\n" +
+        "- At least one special character (!@#$%^&*)"
+      );
+      return;
+    }
+
 
     try {
       const res = await fetch("http://localhost:5000/signup", {
@@ -82,12 +102,8 @@ function LandingPage() {
       
       const data = await res.json();
       if (res.ok) {
-        // 1. Store user ID for later use (verification/profile)
         localStorage.setItem("userId", data.user.id);
-        
         alert("Login successful!");
-
-        // 2. Navigate to the dashboard route
         navigate("/dashboard"); 
       } else {
         alert(data.message || "Login failed");
@@ -99,7 +115,6 @@ function LandingPage() {
 
   return (
     <>
-      {/* 🚀 Hovering Facility: Back to Top Button */}
       {showScrollBtn && (
         <button className="hover-top-btn" onClick={scrollToTop}>
           ↑ Back to Login
@@ -163,7 +178,6 @@ function LandingPage() {
         </div>
       </div>
 
-      {/* Sections with IDs for Navbar anchors */}
       <div id="feedback" className="feedback-section">
         <h2 className="feedback-title">What Our Users Say</h2>
         <div className="feedback-container">
@@ -196,8 +210,6 @@ function LandingPage() {
           <div className="contact-card"><h3>📧 Email</h3><p>support@e-yatayat.com</p></div>
         </div>
       </div>
-
-      
     </>
   );
 }

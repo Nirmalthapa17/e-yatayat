@@ -11,6 +11,8 @@ import ProfileDetailPage from './pages/ProfileDetailPage';
 import VerificationForm from './components/VerificationForm';
 import UserDashboardPage from './pages/UserDashboardPage';
 import LandingPage from './pages/LandingPage';
+import PublicVerify from './pages/PublicVerify';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -20,14 +22,15 @@ function App() {
           <Routes>
             {/* Define the paths for your pages */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/" element={<UserDashboard />} />
-            <Route path="/dashboard" element={<UserDashboardPage />} />
-            <Route path="/documents" element={<MyDocumentsPage />} />
-            <Route path="/vehicles" element={<VehiclesPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/verify/user/:userId" element={<PublicVerify />} />
+            <Route path="/dashboard" element={ <ProtectedRoute> <UserDashboardPage /> </ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute> <MyDocumentsPage /> </ProtectedRoute>} />
+            <Route path="/vehicles" element={<ProtectedRoute><VehiclesPage /> </ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /> </ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/profile-details" element={<ProfileDetailPage />} />
             <Route path="/verification-form" element={<VerificationForm />} />
+            <Route path="/verify/user/:userId" element={<PublicVerify />} />
           </Routes>
     
 

@@ -9,6 +9,13 @@ const MyDocumentsPage = () => {
   // Dynamic User ID Logic
   const userId = localStorage.getItem("userId") || "694cbf278e07deb8dfe00958"; 
 
+    // --- LOGOUT LOGIC ---
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      localStorage.clear(); // Clears userId and any other session data
+      navigate("/"); // Redirects to login page
+    }
+  };
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -47,6 +54,16 @@ const MyDocumentsPage = () => {
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
           <Link to="/settings" className="nav-link">⚙️ Settings</Link>
         </nav>
+        {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
+        <div className="mt-auto p-3 border-top">
+          <button 
+            onClick={handleLogout}
+            className="btn btn-outline-danger btn-sm w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
+          >
+            <span>Logout</span>
+            <i className="bi bi-box-arrow-right"></i> 
+          </button>
+        </div>
       </aside>
 
       <main className="main-content">

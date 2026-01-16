@@ -1,18 +1,36 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+// --- LOGOUT LOGIC ---
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      localStorage.clear(); // Clears userId and any other session data
+      navigate("/"); // Redirects to login page
+    }
+  };
+
 const SettingsPage = () => {
   return (
     <div className="dashboard-wrapper">
       <aside className="sidebar">
         <div className="sidebar-brand"><h2 className="text-primary fw-bold m-0">e-Yatayat</h2></div>
         <nav className="sidebar-nav">
-          <Link to="/" className="nav-link">🏠 Dashboard</Link>
+          <Link to="/dashboard" className="nav-link">🏠 Dashboard</Link>
           <Link to="/documents" className="nav-link">📄 My Documents</Link>
           <Link to="/vehicles" className="nav-link">🚗 Vehicle Info</Link>
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
           <Link to="/settings" className="nav-link active">⚙️ Settings</Link>
         </nav>
+        {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
+        <div className="mt-auto p-3 border-top">
+          <button 
+            onClick={handleLogout}
+            className="btn btn-outline-danger btn-sm w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
+          >
+            <span>Logout</span>
+            <i className="bi bi-box-arrow-right"></i> 
+          </button>
+        </div>
       </aside>
 
       <main className="main-content">

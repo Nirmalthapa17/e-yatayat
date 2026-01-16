@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import VehicleCard from '../components/dashboard/VehicleCard';
 
+
+
+      // --- LOGOUT LOGIC ---
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      localStorage.clear(); // Clears userId and any other session data
+      navigate("/"); // Redirects to login page
+    }
+  };
 const VehiclesPage = () => {
   // Updated state to hold an array of vehicles
   const [vehicles, setVehicles] = useState([]);
@@ -15,6 +24,8 @@ const VehiclesPage = () => {
         
         // 1. Get the dynamic userId from login session
         const userId = localStorage.getItem("userId");
+
+  
         
         if (!userId) {
           throw new Error("User session not found. Please login again.");
@@ -59,6 +70,17 @@ const VehiclesPage = () => {
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
           <Link to="/settings" className="nav-link">⚙️ Settings</Link>
         </nav>
+
+        {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
+        <div className="mt-auto p-3 border-top">
+          <button 
+            onClick={handleLogout}
+            className="btn btn-outline-danger btn-sm w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
+          >
+            <span>Logout</span>
+            <i className="bi bi-box-arrow-right"></i> 
+          </button>
+        </div>
       </aside>
 
       {/* --- MAIN CONTENT --- */}
