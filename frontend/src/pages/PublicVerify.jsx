@@ -110,6 +110,15 @@ const PublicVerify = () => {
                 <div style={styles.infoRow}>
                   <span>Engine:</span> <strong>{v.engineNumber}</strong>
                 </div>
+                {/* --- ADD INSURANCE EXPIRY HERE --- */}
+  <div style={styles.infoRow}>
+    <span>Insurance Expiry:</span> 
+    <strong style={new Date(v.insuranceExpiryDate) < new Date() ? styles.textRed : styles.textGreen}>
+      {v.insuranceExpiryDate 
+        ? new Date(v.insuranceExpiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+        : "No Record"}
+    </strong>
+  </div>
                 <div style={styles.infoRow}>
                   <span>Chassis:</span> <strong>{v.chassisNumber || 'N/A'}</strong>
                 </div>
