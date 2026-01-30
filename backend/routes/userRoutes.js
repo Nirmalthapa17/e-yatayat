@@ -22,7 +22,9 @@ router.get('/profile/:id', async (req, res) => {
 
     // logic: Use License Name if available, otherwise Signup Name
     const displayName = user.linkedLicense ? user.linkedLicense.fullName : user.fullName;
+    
 
+    
     // We send a spread of the user data but overwrite the fullName for the UI
     res.json({
       ...user._doc, 

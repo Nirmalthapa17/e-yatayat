@@ -27,11 +27,11 @@ const SmartCard = ({ type, data, colorClass }) => {
             <div className="bg-secondary-subtle rounded mb-2 d-flex align-items-center justify-content-center" 
                  style={{ height: '100px', border: '1px dashed #ccc' }}>
               <span className="text-muted" style={{fontSize: '9px'}}>
-                {type === 'license' ? 'USER PHOTO' : 'VEHICLE IMG'}
+                {type === 'license' ? 'USER PHOTO' : 'USER PHOTO'}
               </span>
             </div>
             <p className="fw-bold mb-0 text-uppercase" style={{fontSize: '10px'}}>
-              {data.name || data.owner || "NAME NOT FOUND"}
+              {data.name|| data.owner|| "NAME NOT FOUND"}
             </p>
           </div>
 

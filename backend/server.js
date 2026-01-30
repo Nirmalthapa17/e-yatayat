@@ -2,16 +2,20 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path'); // <-- ADD THIS
+const renewalsRoutes = require('./routes/renewals');
 const User = require('./models/User'); 
 const app = express();
 const nodemailer = require('nodemailer'); // <--- ADD THIS for mail verification
 const crypto = require('crypto');
-require('dotenv').config();
+
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-// 1. Database Connection
+app.use(express.urlencoded({ extended: true }));
+
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Successfully connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
@@ -121,6 +125,14 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 });
+
+
+// 3. Renewal Routes (The New Part from your friend)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// routes
+app.use('/api/renewals', renewalsRoutes);
+
 
 app.use('/api/user', require('./routes/userRoutes'));
 

@@ -19,6 +19,12 @@ const VehicleSchema = new mongoose.Schema({
   make: { type: String }, // e.g., Bajaj, Toyota
   manufactureYear: { type: Number },
   vehicleType: { type: String, enum: ['Car', 'Bike', 'Scooter', 'Bus', 'Truck', 'Tractor'] },
+  category: { 
+    type: String, 
+    required: true, 
+    enum: ['Private', 'Public', 'Government', 'Diplomatic'], 
+    default: 'Private' 
+  },
   
   // Advanced Specs for Tax Calculation
   cc: { type: Number }, // Required for tax brackets in Nepal

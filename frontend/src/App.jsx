@@ -13,6 +13,8 @@ import UserDashboardPage from './pages/UserDashboardPage';
 import LandingPage from './pages/LandingPage';
 import PublicVerify from './pages/PublicVerify';
 import ProtectedRoute from './components/ProtectedRoute';
+import LicenseRenewForm from './pages/LicenseRenewForm';
+import BluebookRenewForm from './pages/BluebookRenewForm';
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
             <Route path="/profile-details" element={<ProfileDetailPage />} />
             <Route path="/verification-form" element={<VerificationForm />} />
             <Route path="/verify/user/:userId" element={<PublicVerify />} />
+            <Route path="/renew-license" element={<LicenseRenewForm />} />
+            <Route path="/renew-bluebook" element={<BluebookRenewForm />} />
           </Routes>
     
 

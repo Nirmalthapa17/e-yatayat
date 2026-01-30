@@ -130,7 +130,7 @@ const ProfileDetailPage = () => {
                   <SmartCard 
                       type="bluebook" 
                       data={{
-                          owner: `${userData?.firstName} ${userData?.lastName}`,
+                          name: vehicleData.ownerName,
                           number: vehicleData.vehicleNumber,
                           model: vehicleData.vehicleType,
                           engine: vehicleData.engineNumber,

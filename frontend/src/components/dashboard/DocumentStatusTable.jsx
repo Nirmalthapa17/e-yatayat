@@ -30,7 +30,7 @@ const DocumentStatusTable = ({ user }) => {
       documents.push({
         name: `Bluebook (${veh.vehicleType || 'Vehicle'})`,
         id: veh.vehicleNumber,
-        status: veh.isVerified ? "Verified" : "Under Review",
+        status: user.isVerified ? "Verified" : "Under Review",
         type: "Property"
       });
     });

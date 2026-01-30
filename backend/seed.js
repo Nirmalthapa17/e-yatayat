@@ -12,7 +12,7 @@ const seedDatabase = async () => {
         // --- VEHICLE DATA (11 Records) ---
         const vehicles = [
             {
-                vehicleNumber: "BAGMATI-125-PA-5566", ownerName: "Aayush Bista",
+                vehicleNumber: "BAGMATI-125-PA-5566", ownerName: "Nirmal Thapa", category: "Private",
                 engineNumber: "ENG-B-998877", chassisNumber: "CHAS-B-112233",
                 model: "Pulsar 220F", make: "Bajaj", manufactureYear: 2021,
                 vehicleType: "Bike", cc: 220, fuelType: "Petrol", color: "Black",
@@ -22,7 +22,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v1.jpg"
             },
             {
-                vehicleNumber: "BA-2-CHA-1020", ownerName: "Sita Sharma",
+                vehicleNumber: "BA-2-CHA-1020", ownerName: "Sita Sharma", category: "Private",
                 engineNumber: "ENG-C-112233", chassisNumber: "CHAS-C-998877",
                 model: "Swift VXI", make: "Suzuki", manufactureYear: 2022,
                 vehicleType: "Car", cc: 1200, fuelType: "Petrol", color: "White",
@@ -32,7 +32,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v2.jpg"
             },
             {
-                vehicleNumber: "PRO-3-02-001-BA-4455", ownerName: "Ram Bahadur Thapa",
+                vehicleNumber: "PRO-3-02-001-BA-4455", ownerName: "Ram Bahadur Thapa", category: "Private",
                 engineNumber: "ENG-BUS-5566", chassisNumber: "CHAS-BUS-7788",
                 model: "LP 1512", make: "Tata", manufactureYear: 2019,
                 vehicleType: "Bus", cc: 5000, fuelType: "Diesel", color: "Blue",
@@ -42,7 +42,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v3.jpg"
             },
             {
-                vehicleNumber: "BA-1-PA-9988", ownerName: "Binod Chaudhary",
+                vehicleNumber: "BA-1-PA-9988", ownerName: "Binod Chaudhary", category: "Public",
                 engineNumber: "ENG-EV-001", chassisNumber: "CHAS-EV-001",
                 model: "450X", make: "Ather", manufactureYear: 2023,
                 vehicleType: "Scooter", cc: 0, fuelType: "Electric", color: "Grey",
@@ -52,7 +52,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v4.jpg"
             },
             {
-                vehicleNumber: "LU-2-CHA-5060", ownerName: "Sunita Rai",
+                vehicleNumber: "LU-2-CHA-5060", ownerName: "Sunita Rai", category: "Private",
                 engineNumber: "ENG-SUV-4433", chassisNumber: "CHAS-SUV-2211",
                 model: "Scorpio S11", make: "Mahindra", manufactureYear: 2020,
                 vehicleType: "Car", cc: 2200, fuelType: "Diesel", color: "Silver",
@@ -62,7 +62,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v5.jpg"
             },
             {
-                vehicleNumber: "BA-3-PA-1234", ownerName: "Deepak Raj",
+                vehicleNumber: "BA-3-PA-1234", ownerName: "Deepak Raj", category: "Private",
                 engineNumber: "ENG-BK-7722", chassisNumber: "CHAS-BK-8833",
                 model: "Classic 350", make: "Royal Enfield", manufactureYear: 2018,
                 vehicleType: "Bike", cc: 350, fuelType: "Petrol", color: "Black",
@@ -72,7 +72,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v6.jpg"
             },
             {
-                vehicleNumber: "BA-01-KHA-9876", ownerName: "Madan Krishna",
+                vehicleNumber: "BA-01-KHA-9876", ownerName: "Madan Krishna", category: "Private",
                 engineNumber: "ENG-TR-111", chassisNumber: "CHAS-TR-222",
                 model: "Signa 2823", make: "Tata", manufactureYear: 2021,
                 vehicleType: "Truck", cc: 5600, fuelType: "Diesel", color: "Yellow",
@@ -82,7 +82,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v7.jpg"
             },
             {
-                vehicleNumber: "BA-12-PA-1122", ownerName: "Nabin K Bhatta",
+                vehicleNumber: "BA-12-PA-1122", ownerName: "Nabin K Bhatta", category: "Private",
                 engineNumber: "ENG-S-0099", chassisNumber: "CHAS-S-0088",
                 model: "Ntorq 125", make: "TVS", manufactureYear: 2022,
                 vehicleType: "Scooter", cc: 125, fuelType: "Petrol", color: "Red",
@@ -92,7 +92,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v8.jpg"
             },
             {
-                vehicleNumber: "KO-1-PA-3344", ownerName: "Sushila Karki",
+                vehicleNumber: "KO-1-PA-3344", ownerName: "Sushila Karki",category: "Private",
                 engineNumber: "ENG-B-5544", chassisNumber: "CHAS-B-3322",
                 model: "Splendor Plus", make: "Hero", manufactureYear: 2017,
                 vehicleType: "Bike", cc: 100, fuelType: "Petrol", color: "Blue",
@@ -102,7 +102,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v9.jpg"
             },
             {
-                vehicleNumber: "PRO-03-01-CHA-1199", ownerName: "Ganesh Thapa",
+                vehicleNumber: "PRO-03-01-CHA-1199", ownerName: "Ganesh Thapa", category: "Private",
                 engineNumber: "ENG-C-776655", chassisNumber: "CHAS-C-443322",
                 model: "Creta SX", make: "Hyundai", manufactureYear: 2023,
                 vehicleType: "Car", cc: 1500, fuelType: "Petrol", color: "Black",
@@ -112,7 +112,7 @@ const seedDatabase = async () => {
                 vehiclePhoto: "https://res.cloudinary.com/demo/image/upload/v1/vehicles/v10.jpg"
             },
             {
-                vehicleNumber: "BA-2-PA-8899", ownerName: "Rahul Verma",
+                vehicleNumber: "BA-2-PA-8899", ownerName: "Rahul Verma", category: "Private",
                 engineNumber: "ENG-EV-009", chassisNumber: "CHAS-EV-009",
                 model: "Nexon EV", make: "Tata", manufactureYear: 2022,
                 vehicleType: "Car", cc: 0, fuelType: "Electric", color: "Teal",
@@ -127,11 +127,11 @@ const seedDatabase = async () => {
         const licenses = [
   {
     licenseNumber: "01-06-12345678",
-    fullName: "Aayush Bista",
+    fullName: "Nirmal Thapa",
     dateOfBirth: new Date("2000-05-15"),
     bloodGroup: "O+",
     gender: "Male",
-    fatherName: "Hari Prasad Bista",
+    fatherName: "Nabaraj Thapa",
     citizenshipNumber: "27-01-72-99999",
     issuedDistrict: "Kathmandu",
     categories: ["A", "B"],
