@@ -10,7 +10,7 @@ const QRModal = ({ user, onClose }) => {
   // 2. Logic: Verification Status Color
   const isVerified = user?.verificationStatus === 'Approved';
 
-  const verifyUrl = `http://172.18.123.69:5173/verify/user/${user._id}`;
+  const verifyUrl = `http://172.18.91.16:5173/verify/user/${user._id}`;
 
   const downloadQR = () => {
     const canvas = qrRef.current.querySelector('canvas');

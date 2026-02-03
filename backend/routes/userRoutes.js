@@ -106,6 +106,7 @@ router.put('/submit-verification/:userId', upload.fields([
 });
 
 /**
+ /**
  * 3. VERIFY ALL DATA (Public Verification Link)
  */
 const verifyAllData = async (req, res) => {
@@ -116,11 +117,18 @@ const verifyAllData = async (req, res) => {
       .populate('linkedLicense')
       .populate('linkedVehicles');
 
-    if (!user) {
-      return res.status(404).json({ message: "Citizen record not found" });
-    }
+    if (!user) return res.status(404).json({ message: "Citizen record not found" });
 
     const officialName = user.linkedLicense ? user.linkedLicense.fullName : user.fullName;
+
+    // --- NEW DYNAMIC HASH LOGIC ---
+    // We combine the UserID with their Verification Status and the Tax Expiry 
+    // of their first vehicle. If any of these change, the hash changes!
+    const taxStatus = user.linkedVehicles?.[0]?.taxExpiryDate || "NoVehicle";
+    const secretKey = "EYATAYAT-SECRET-SALT"; // In production, use process.env.HASH_SECRET
+    
+    const hashInput = `${user._id}-${user.verificationStatus}-${taxStatus}-${secretKey}`;
+    const dynamicHash = crypto.createHash('sha256').update(hashInput).digest('hex').substring(0, 32).toUpperCase();
 
     const verificationData = {
       fullName: officialName,
@@ -136,16 +144,17 @@ const verifyAllData = async (req, res) => {
         engineNumber: v.engineNumber,
         chassisNumber: v.chassisNumber,
         taxExpiryDate: v.taxExpiryDate,
+        insuranceExpiryDate: v.insuranceExpiryDate, // Added insurance as requested earlier
         make: v.make || "N/A",
         model: v.model || "N/A"
       })) : [],
-      securityHash: Buffer.from(`${user._id}-SECURE`).toString('hex').substring(0, 32).toUpperCase()
+      securityHash: dynamicHash // Using the new dynamic hash
     };
 
     res.json(verificationData);
   } catch (error) {
     console.error("Verification API Error:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
