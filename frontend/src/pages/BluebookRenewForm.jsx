@@ -10,6 +10,7 @@ export default function BluebookRenewForm({ onClose, onSuccess }) {
   const [prevExpiry, setPrevExpiry] = useState("");
   const [bluebookFile, setBluebookFile] = useState(null);
   const [receiptFile, setReceiptFile] = useState(null);
+  const [pollutionFile, setPollutionFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,22 @@ export default function BluebookRenewForm({ onClose, onSuccess }) {
     if (!file) return null;
     if (file.size > MAX_BYTES) return "File must be 1 MB or smaller.";
     return null;
+  };
+
+
+  // --- NEW: Handler for Pollution File ---
+  const handlePollutionFile = (e) => {
+    setServerError("");
+    const f = e.target.files[0];
+    const err = checkFileSize(f);
+    if (err) {
+      setErrors((s) => ({ ...s, pollutionFile: err }));
+      setPollutionFile(null);
+      e.target.value = "";
+      return;
+    }
+    setErrors((s) => ({ ...s, pollutionFile: null }));
+    setPollutionFile(f);
   };
 
   const handleBluebookFile = (e) => {
@@ -65,6 +82,8 @@ export default function BluebookRenewForm({ onClose, onSuccess }) {
     if (!prevExpiry) newErrors.prevExpiry = "Required.";
     if (!bluebookFile) newErrors.bluebookFile = "Upload bluebook image (≤1MB).";
     if (!receiptFile) newErrors.receiptFile = "Upload payment receipt (≤1MB).";
+    // Optional: Make pollution file required for 4-wheelers
+    if (!pollutionFile) newErrors.pollutionFile = "Upload pollution/green sticker.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -83,6 +102,7 @@ export default function BluebookRenewForm({ onClose, onSuccess }) {
     fd.append("previousExpiry", prevExpiry);
     fd.append("bluebook", bluebookFile);
     fd.append("receipt", receiptFile);
+    if (pollutionFile) fd.append("pollutionDoc", pollutionFile);
 
     setLoading(true);
     try {
@@ -170,6 +190,14 @@ export default function BluebookRenewForm({ onClose, onSuccess }) {
             type="file"
             accept="image/*,application/pdf"
             onChange={handleReceiptFile}
+          />
+          {/* --- NEW: Pollution Document Input --- */}
+          <label className="label">Environment/Pollution Check (Green Sticker)</label>
+          <input
+            className="input"
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handlePollutionFile}
           />
           {errors.receiptFile && <div className="error">{errors.receiptFile}</div>}
 

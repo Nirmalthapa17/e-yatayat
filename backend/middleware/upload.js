@@ -24,7 +24,8 @@ const upload = multer({
 // fields expected for bluebook and license endpoints
 const bluebookUpload = upload.fields([
   { name: 'bluebook', maxCount: 1 },
-  { name: 'receipt', maxCount: 1 }
+  { name: 'receipt', maxCount: 1 },
+  { name: 'pollutionDoc', maxCount: 1 }
 ]);
 
 const licenseUpload = upload.fields([

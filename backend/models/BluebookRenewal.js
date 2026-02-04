@@ -15,6 +15,10 @@ const BluebookRenewalSchema = new mongoose.Schema({
   paymentReceiptPublicId: { type: String },
   paymentReceiptOriginalName: { type: String },
 
+  pollutionDocUrl: { type: String }, // Optional or required based on vehicle type
+  pollutionDocPublicId: { type: String },
+  pollutionDocOriginalName: { type: String },
+
   status: { type: String, enum: ['pending','approved','rejected'], default: 'pending' },
   submittedAt: { type: Date, default: Date.now }
 });

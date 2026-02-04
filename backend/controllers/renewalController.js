@@ -44,20 +44,22 @@ const submitBluebook = async (req, res, next) => {
 
     const bluebookFile = req.files?.bluebook?.[0];
     const receiptFile = req.files?.receipt?.[0];
+    const pollutionFile = req.files?.pollutionDoc?.[0];
 
-    if (!bluebookFile || !receiptFile) {
-      return res.status(400).json({ message: 'bluebook image and payment receipt are required (multipart/form-data with files)' });
+    if (!bluebookFile || !receiptFile || !pollutionFile ) {
+      return res.status(400).json({ message: 'bluebook image , payment receipt and Pollution document  are required (multipart/form-data with files)' });
     }
 
-    if (bluebookFile.size > ONE_MB || receiptFile.size > ONE_MB) {
+    if (bluebookFile.size > ONE_MB || receiptFile.size > ONE_MB || pollutionFile.size > ONE_MB) {
       return res.status(400).json({ message: 'One or more files exceed 1 MB' });
     }
 
-    let bluebookRes, receiptRes;
+    let bluebookRes, receiptRes, pollutionRes;
     try {
-      [bluebookRes, receiptRes] = await Promise.all([
+      [bluebookRes, receiptRes, pollutionRes] = await Promise.all([
         uploadBufferToCloudinary(bluebookFile.buffer, 'e-yatayat/bluebook', 'bluebook'),
-        uploadBufferToCloudinary(receiptFile.buffer, 'e-yatayat/receipts', 'receipt')
+        uploadBufferToCloudinary(receiptFile.buffer, 'e-yatayat/receipts', 'receipt'),
+        uploadBufferToCloudinary(pollutionFile.buffer, 'e-yatayat/pollution', 'pollution') // --- NEW ---
       ]);
     } catch (upErr) {
       console.error('Cloudinary upload error (bluebook):', upErr);
@@ -75,6 +77,10 @@ const submitBluebook = async (req, res, next) => {
       paymentReceiptUrl: receiptRes.secure_url,
       paymentReceiptPublicId: receiptRes.public_id,
       paymentReceiptOriginalName: receiptFile.originalname,
+
+      pollutionDocUrl: pollutionRes.secure_url,
+      pollutionDocPublicId: pollutionRes.public_id,
+      pollutionDocOriginalName: pollutionFile.originalname,
       status: 'pending'
     });
 
