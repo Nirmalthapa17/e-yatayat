@@ -6,11 +6,8 @@ const Vehicle = require('../models/Vehicle');
 const crypto = require('crypto');
 const upload = require('../middleware/cloudinaryConfig');
 
-
 /**
  * 1. GET FULL USER WALLET
- * Path: GET /api/user/profile/:id
- * (Note: We use '/profile/:id' because '/api/user' is added in server.js)
  */
 router.get('/profile/:id', async (req, res) => {
   try {
@@ -20,15 +17,12 @@ router.get('/profile/:id', async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // logic: Use License Name if available, otherwise Signup Name
-    const displayName = user.linkedLicense ? user.linkedLicense.fullName : user.fullName;
+    const displayName = user.linkedLicense ? user.linkedLicense.fullName : (user.appliedName || user.fullName);
     
-
-    
-    // We send a spread of the user data but overwrite the fullName for the UI
     res.json({
       ...user._doc, 
-      fullName: displayName 
+      fullName: displayName,
+      licenseNumber: user.linkedLicense ? user.linkedLicense.licenseNumber : user.appliedLicenseNumber,
     });
   } catch (err) {
     console.error("Profile Fetch Error:", err);
@@ -37,8 +31,7 @@ router.get('/profile/:id', async (req, res) => {
 });
 
 /**
- * 2. SUBMIT VERIFICATION FORM (With Cloudinary Images)
- * Path: PUT /api/user/submit-verification/:userId
+ * 2. SUBMIT VERIFICATION FORM (Improved for Multiple Vehicles)
  */
 router.put('/submit-verification/:userId', upload.fields([
     { name: 'citizenshipFront', maxCount: 1 },
@@ -48,55 +41,51 @@ router.put('/submit-verification/:userId', upload.fields([
 ]), async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    // Extract text data from req.body
-    const { 
-      fullName,
-      citizenshipNumber, 
-      licenseNumber, 
-      vehicleNumber, 
-      engineNumber 
-    } = req.body;
+    const { fullName, citizenshipNumber, licenseNumber, vehicleNumber, engineNumber } = req.body;
 
-    // Extract Cloudinary URLs from req.files
-    const citizenshipImageUrl = req.files['citizenshipFront'] ? req.files['citizenshipFront'][0].path : null;
-    const licenseImageUrl = req.files['licenseFront'] ? req.files['licenseFront'][0].path : null;
-    const bluebookImageUrl = req.files['bluebookPage2'] ? req.files['bluebookPage2'][0].path : null;
-    const profilePhotoUrl = req.files['profilePhoto'] ? req.files['profilePhoto'][0].path : null;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Build update object
-    const updateData = {
-      appliedName: fullName,
-      citizenshipNumber: citizenshipNumber,
-      citizenshipImageUrl: citizenshipImageUrl,
-      appliedProfilePhotoUrl: profilePhotoUrl,
-      verificationStatus: 'Pending'
-    };
+    // Helper to get Cloudinary paths
+    const getPath = (fieldname) => req.files[fieldname] ? req.files[fieldname][0].path : null;
 
-    // If license info was provided, add it to update
-    if (licenseNumber) {
-        updateData.appliedLicenseNumber = licenseNumber;
-        updateData.licenseImageUrl = licenseImageUrl;
+    // Logic: If user is already Approved, we don't want to set their whole account to 'Pending'
+    // We only set it to 'Pending' if it's their very first time (status 'None' or 'Rejected')
+    if (user.verificationStatus === 'None' || user.verificationStatus === 'Rejected') {
+        user.verificationStatus = 'Pending';
     }
 
-    // If vehicle info was provided, add it to update
+    // 1. Always update personal info if provided (First time setup)
+    if (fullName) user.appliedName = fullName;
+    if (citizenshipNumber) user.citizenshipNumber = citizenshipNumber;
+    if (req.files['citizenshipFront']) user.citizenshipImageUrl = getPath('citizenshipFront');
+    if (req.files['profilePhoto']) user.appliedProfilePhotoUrl = getPath('profilePhoto');
+
+    // 2. Handle License (Only if not already linked)
+    if (licenseNumber && !user.linkedLicense) {
+        user.appliedLicenseNumber = licenseNumber;
+        if (req.files['licenseFront']) user.licenseImageUrl = getPath('licenseFront');
+    }
+
+    // 3. Handle Vehicle (Add to the pending list)
     if (vehicleNumber) {
-        updateData.appliedVehicleNumber = vehicleNumber;
-        updateData.appliedEngineNumber = engineNumber;
-        updateData.bluebookImageUrl = bluebookImageUrl;;
+        const newPendingVehicle = {
+            vehicleNumber: vehicleNumber,
+            engineNumber: engineNumber,
+            bluebookImageUrl: getPath('bluebookPage2'),
+            status: 'Pending'
+        };
+        
+        // Push to the array instead of overwriting a single string
+        // Note: Ensure your User Schema has 'appliedVehicles' as an array
+        user.appliedVehicles.push(newPendingVehicle);
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true }
-    );
-
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+    await user.save();
 
     res.status(200).json({ 
-        message: "Verification request submitted with images to Admin", 
-        user: updatedUser 
+        message: "Verification request submitted successfully", 
+        user 
     });
 
   } catch (err) {
@@ -106,58 +95,32 @@ router.put('/submit-verification/:userId', upload.fields([
 });
 
 /**
- /**
- * 3. VERIFY ALL DATA (Public Verification Link)
+ * 3. PUBLIC VERIFICATION (QR LINK)
  */
-const verifyAllData = async (req, res) => {
+router.get('/verify-all/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-
-    const user = await User.findById(userId)
-      .populate('linkedLicense')
-      .populate('linkedVehicles');
+    const user = await User.findById(userId).populate('linkedLicense').populate('linkedVehicles');
 
     if (!user) return res.status(404).json({ message: "Citizen record not found" });
 
     const officialName = user.linkedLicense ? user.linkedLicense.fullName : user.fullName;
-
-    // --- NEW DYNAMIC HASH LOGIC ---
-    // We combine the UserID with their Verification Status and the Tax Expiry 
-    // of their first vehicle. If any of these change, the hash changes!
     const taxStatus = user.linkedVehicles?.[0]?.taxExpiryDate || "NoVehicle";
-    const secretKey = "EYATAYAT-SECRET-SALT"; // In production, use process.env.HASH_SECRET
+    const secretKey = "EYATAYAT-SECRET-SALT"; 
     
     const hashInput = `${user._id}-${user.verificationStatus}-${taxStatus}-${secretKey}`;
     const dynamicHash = crypto.createHash('sha256').update(hashInput).digest('hex').substring(0, 32).toUpperCase();
 
-    const verificationData = {
+    res.json({
       fullName: officialName,
-      license: user.linkedLicense ? {
-        licenseNumber: user.linkedLicense.licenseNumber,
-        category: user.linkedLicense.categories?.join(", ") || "A, B",
-        expiryDate: user.linkedLicense.expiryDate,
-        status: user.verificationStatus === "Approved" ? "Active" : "Pending Verification"
-      } : null,
-      vehicles: user.linkedVehicles ? user.linkedVehicles.map(v => ({
-        vehicleNumber: v.vehicleNumber,
-        vehicleType: v.vehicleType || "N/A",
-        engineNumber: v.engineNumber,
-        chassisNumber: v.chassisNumber,
-        taxExpiryDate: v.taxExpiryDate,
-        insuranceExpiryDate: v.insuranceExpiryDate, // Added insurance as requested earlier
-        make: v.make || "N/A",
-        model: v.model || "N/A"
-      })) : [],
-      securityHash: dynamicHash // Using the new dynamic hash
-    };
-
-    res.json(verificationData);
+      status: user.verificationStatus,
+      license: user.linkedLicense,
+      vehicles: user.linkedVehicles,
+      securityHash: dynamicHash 
+    });
   } catch (error) {
-    console.error("Verification API Error:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
-};
-
-router.get('/verify-all/:userId', verifyAllData);
+});
 
 module.exports = router;

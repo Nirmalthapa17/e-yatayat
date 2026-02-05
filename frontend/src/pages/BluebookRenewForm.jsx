@@ -1,214 +1,146 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const MAX_BYTES = 1 * 1024 * 1024; // 1 MB
-const API_BASE = "http://localhost:5000"; // change if your backend runs elsewhere
+const API_BASE = "http://localhost:5000";
 
 export default function BluebookRenewForm({ onClose, onSuccess }) {
-  const [vehicleNumber, setVehicleNumber] = useState("");
-  const [ownerName, setOwnerName] = useState("");
-  const [email, setEmail] = useState("");
-  const [prevExpiry, setPrevExpiry] = useState("");
-  const [bluebookFile, setBluebookFile] = useState(null);
-  const [receiptFile, setReceiptFile] = useState(null);
-  const [pollutionFile, setPollutionFile] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState("");
+  const userId = localStorage.getItem("userId");
+  
+  // Store all vehicles found in user profile
+  const [vehicles, setVehicles] = useState([]);
+  const [selectedIdx, setSelectedIdx] = useState(0); // Default to first vehicle
+
+  const [formData, setFormData] = useState({
+    ownerName: "",
+    email: "",
+  });
+
+  const [files, setFiles] = useState({
+    insurance: null,
+    receipt: null,
+    pollution: null
+  });
+
   const [loading, setLoading] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
+  const [fetching, setFetching] = useState(true);
 
-  const checkFileSize = (file) => {
-    if (!file) return null;
-    if (file.size > MAX_BYTES) return "File must be 1 MB or smaller.";
-    return null;
-  };
+  useEffect(() => {
+    const fetchVerifiedData = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/user/profile/${userId}`);
+        const user = res.data;
+        
+        setFormData({
+          ownerName: user.fullName || "",
+          email: user.email || "",
+        });
 
-
-  // --- NEW: Handler for Pollution File ---
-  const handlePollutionFile = (e) => {
-    setServerError("");
-    const f = e.target.files[0];
-    const err = checkFileSize(f);
-    if (err) {
-      setErrors((s) => ({ ...s, pollutionFile: err }));
-      setPollutionFile(null);
-      e.target.value = "";
-      return;
-    }
-    setErrors((s) => ({ ...s, pollutionFile: null }));
-    setPollutionFile(f);
-  };
-
-  const handleBluebookFile = (e) => {
-    setServerError("");
-    const f = e.target.files[0];
-    const err = checkFileSize(f);
-    if (err) {
-      setErrors((s) => ({ ...s, bluebookFile: err }));
-      setBluebookFile(null);
-      e.target.value = "";
-      return;
-    }
-    setErrors((s) => ({ ...s, bluebookFile: null }));
-    setBluebookFile(f);
-  };
-
-  const handleReceiptFile = (e) => {
-    setServerError("");
-    const f = e.target.files[0];
-    const err = checkFileSize(f);
-    if (err) {
-      setErrors((s) => ({ ...s, receiptFile: err }));
-      setReceiptFile(null);
-      e.target.value = "";
-      return;
-    }
-    setErrors((s) => ({ ...s, receiptFile: null }));
-    setReceiptFile(f);
-  };
-
-  const validateEmailFormat = (v) => {
-    if (!v) return "Email is required.";
-    // simple email check
-    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-    return ok ? null : "Enter a valid email.";
-  };
-
-  const validateClient = () => {
-    const newErrors = {};
-    if (!vehicleNumber.trim()) newErrors.vehicleNumber = "Required.";
-    if (!ownerName.trim()) newErrors.ownerName = "Required.";
-    const emailErr = validateEmailFormat(email);
-    if (emailErr) newErrors.email = emailErr;
-    if (!prevExpiry) newErrors.prevExpiry = "Required.";
-    if (!bluebookFile) newErrors.bluebookFile = "Upload bluebook image (≤1MB).";
-    if (!receiptFile) newErrors.receiptFile = "Upload payment receipt (≤1MB).";
-    // Optional: Make pollution file required for 4-wheelers
-    if (!pollutionFile) newErrors.pollutionFile = "Upload pollution/green sticker.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+        // Set the list of vehicles (e.g., Bike and Car)
+        if (user.linkedVehicles && user.linkedVehicles.length > 0) {
+          setVehicles(user.linkedVehicles);
+        }
+      } catch (err) {
+        console.error("Auto-fill error:", err);
+      } finally {
+        setFetching(false);
+      }
+    };
+    if (userId) fetchVerifiedData();
+  }, [userId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setServerError("");
-    setSuccessMsg("");
-    if (!validateClient()) return;
-
-    // Build FormData (multipart/form-data)
-    const fd = new FormData();
-    fd.append("vehicleNumber", vehicleNumber);
-    fd.append("ownerName", ownerName);
-    fd.append("email", email);
-    fd.append("previousExpiry", prevExpiry);
-    fd.append("bluebook", bluebookFile);
-    fd.append("receipt", receiptFile);
-    if (pollutionFile) fd.append("pollutionDoc", pollutionFile);
-
     setLoading(true);
+
+    const currentVehicle = vehicles[selectedIdx]?.vehicleNumber;
+
+    const fd = new FormData();
+    fd.append("vehicleNumber", currentVehicle);
+    fd.append("ownerName", formData.ownerName);
+    fd.append("email", formData.email);
+    fd.append("insuranceDoc", files.insurance); 
+    fd.append("receipt", files.receipt);
+    fd.append("pollutionDoc", files.pollution);
+
     try {
       const res = await fetch(`${API_BASE}/api/renewals/bluebook`, {
         method: "POST",
         body: fd,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setServerError(data?.message || data?.error || "Upload failed");
-      } else {
-        setSuccessMsg("Bluebook renewal submitted successfully.");
-        if (onSuccess) onSuccess();
-        setTimeout(() => {
-          if (onClose) onClose();
-        }, 1000);
+      if (res.ok) {
+        alert(`✅ Renewal submitted for ${currentVehicle}`);
+        onSuccess && onSuccess();
+        onClose();
       }
     } catch (err) {
-      setServerError(err.message || "Network error");
+      alert("Submission error.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetching) return <div className="overlay">Loading...</div>;
+
   return (
     <div className="overlay">
-      <div className="form-containers" role="dialog" aria-modal="true">
-        <div className="form-header">
-          <h2>Bluebook Renewal Form</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
+      <div className="card shadow border-0 p-0 overflow-hidden" style={{ maxWidth: '500px', width: '95%', borderRadius: '15px' }}>
+        
+        <div className="bg-dark text-white p-4 text-center position-relative">
+          <h4 className="fw-bold m-0">Vehicle Renewal</h4>
+          <p className="small opacity-75 m-0">Select a vehicle to renew</p>
+          <button className="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-3 border-0" onClick={onClose}>✕</button>
         </div>
 
-        <form className="renew-form" onSubmit={handleSubmit}>
-          {serverError && <div className="error">{serverError}</div>}
-          {successMsg && <div className="success">{successMsg}</div>}
-
-          <label className="label">Vehicle Number</label>
-          <input
-            className="input"
-            value={vehicleNumber}
-            onChange={(e) => setVehicleNumber(e.target.value)}
-            placeholder="e.g., BA 12 PA 1234"
-          />
-          {errors.vehicleNumber && <div className="error">{errors.vehicleNumber}</div>}
-
-          <label className="label">Owner Name</label>
-          <input
-            className="input"
-            value={ownerName}
-            onChange={(e) => setOwnerName(e.target.value)}
-          />
-          {errors.ownerName && <div className="error">{errors.ownerName}</div>}
-
-          <label className="label">Email</label>
-          <input
-            className="input"
-            value={email}
-            onChange={(e) => setEmail(e.target.value.trim())}
-            placeholder="user@example.com"
-          />
-          {errors.email && <div className="error">{errors.email}</div>}
-
-          <label className="label">Previous Expiry Date</label>
-          <input
-            className="input"
-            type="date"
-            value={prevExpiry}
-            onChange={(e) => setPrevExpiry(e.target.value)}
-          />
-          {errors.prevExpiry && <div className="error">{errors.prevExpiry}</div>}
-
-          <label className="label">Upload Bluebook Image <span className="muted">(max 1 MB)</span></label>
-          <input
-            className="input"
-            type="file"
-            accept="image/*"
-            onChange={handleBluebookFile}
-          />
-          {errors.bluebookFile && <div className="error">{errors.bluebookFile}</div>}
-
-          <label className="label">Upload Payment Receipt <span className="muted">(max 1 MB)</span></label>
-          <input
-            className="input"
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={handleReceiptFile}
-          />
-          {/* --- NEW: Pollution Document Input --- */}
-          <label className="label">Environment/Pollution Check (Green Sticker)</label>
-          <input
-            className="input"
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={handlePollutionFile}
-          />
-          {errors.receiptFile && <div className="error">{errors.receiptFile}</div>}
-
-          <div className="form-actions">
-            <button type="button" className="secondary-btn" onClick={onClose} disabled={loading}>
-              Cancel
-            </button>
-            <button type="submit" className="primary-btn" disabled={loading}>
-              {loading ? "Uploading..." : "Confirm"}
-            </button>
+        <form className="p-4" onSubmit={handleSubmit}>
+          
+          {/* VEHICLE SELECTOR - This handles 1, 2, or more vehicles */}
+          <div className="mb-4">
+            <label className="form-label extra-small fw-bold text-muted text-uppercase">Select Vehicle</label>
+            <select 
+              className="form-select fw-bold border-success bg-success-subtle"
+              value={selectedIdx}
+              onChange={(e) => setSelectedIdx(e.target.value)}
+            >
+              {vehicles.map((v, index) => (
+                <option key={index} value={index}>
+                  {v.vehicleNumber} ({v.symbol === 'PA' ? 'Bike' : 'Car/Other'})
+                </option>
+              ))}
+            </select>
+            <div className="extra-small text-muted mt-1">Only verified vehicles are listed here.</div>
           </div>
+
+          <div className="p-3 bg-light rounded border mb-4">
+            <div className="d-flex justify-content-between mb-1">
+              <span className="extra-small fw-bold text-muted text-uppercase">Owner Name</span>
+              <span className="small fw-bold">{formData.ownerName}</span>
+            </div>
+          </div>
+
+          <h6 className="fw-bold mb-3"><i className="bi bi-upload me-2 text-primary"></i>Upload Documents</h6>
+          
+          <div className="mb-3">
+            <label className="form-label small fw-bold">Insurance Policy</label>
+            <input type="file" className="form-control form-control-sm" required
+              onChange={(e) => setFiles({...files, insurance: e.target.files[0]})} />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label small fw-bold">Tax Payment Receipt</label>
+            <input type="file" className="form-control form-control-sm" required
+              onChange={(e) => setFiles({...files, receipt: e.target.files[0]})} />
+          </div>
+
+          <div className="mb-4">
+            <label className="form-label small fw-bold">Pollution Certificate</label>
+            <input type="file" className="form-control form-control-sm" required
+              onChange={(e) => setFiles({...files, pollution: e.target.files[0]})} />
+          </div>
+
+          <button type="submit" disabled={loading} className="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+            {loading ? "Processing..." : "Submit Renewal Request"}
+          </button>
         </form>
       </div>
     </div>

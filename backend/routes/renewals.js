@@ -1,25 +1,29 @@
-// src/routes/renewals.js
 const express = require('express');
 const router = express.Router();
 const { bluebookUpload, licenseUpload } = require('../middleware/upload');
 const controller = require('../controllers/renewalController');
 
-// Public endpoints to submit renewals
-router.post('/bluebook', (req, res, next) => {
-  // run multer, then controller
-  bluebookUpload(req, res, function (err) {
-    if (err) return next(err);
+/**
+ * 1. BLUEBOOK RENEWAL
+ * Fields expected: insuranceDoc, receipt, pollutionDoc
+ */
+router.post('/bluebook', bluebookUpload, (req, res, next) => {
+    // Multer adds files to req.files and text fields to req.body
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).json({ message: "No documents uploaded" });
+    }
     controller.submitBluebook(req, res, next);
-  });
 });
 
-router.post('/license', (req, res, next) => {
-  licenseUpload(req, res, function (err) {
-    if (err) return next(err);
+/**
+ * 2. LICENSE RENEWAL
+ * Fields expected: medical, receipt
+ */
+router.post('/license', licenseUpload, (req, res, next) => {
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).json({ message: "Required documents (Medical/Receipt) are missing" });
+    }
     controller.submitLicense(req, res, next);
-  });
 });
-
-// Admin endpoints to list pending renewals (later protect with auth)
 
 module.exports = router;

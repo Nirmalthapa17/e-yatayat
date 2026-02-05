@@ -7,7 +7,7 @@ const MyDocumentsPage = () => {
   const [loading, setLoading] = useState(true);
 
   // Dynamic User ID Logic
-  const userId = localStorage.getItem("userId") || "694cbf278e07deb8dfe00958"; 
+  const userId = localStorage.getItem("userId"); 
 
     // --- LOGOUT LOGIC ---
   const handleLogout = () => {
@@ -52,7 +52,7 @@ const MyDocumentsPage = () => {
           <Link to="/documents" className="nav-link active">📄 My Documents</Link>
           <Link to="/vehicles" className="nav-link">🚗 Vehicle Info</Link>
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
-          <Link to="/settings" className="nav-link">⚙️ Settings</Link>
+          <Link to="/settings" className="nav-link">⚙️ Info and Rate</Link>
         </nav>
         {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
         <div className="mt-auto p-3 border-top">

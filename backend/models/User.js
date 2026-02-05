@@ -12,8 +12,12 @@ const UserSchema = new mongoose.Schema({
   appliedProfilePhotoUrl: { type: String },
   citizenshipNumber: { type: String },
   appliedLicenseNumber: { type: String },
-  appliedVehicleNumber: { type: String },
-  appliedEngineNumber: { type: String },
+  appliedVehicles: [{
+    vehicleNumber: String,
+    engineNumber: String,
+    bluebookImageUrl: String,
+    submittedAt: { type: Date, default: Date.now }
+}],
 
   // --- DOCUMENT IMAGE URLS (Cloudinary Links) ---
   citizenshipImageUrl: { type: String },

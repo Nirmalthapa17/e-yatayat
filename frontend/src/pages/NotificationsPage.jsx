@@ -9,13 +9,13 @@ const NotificationsPage = () => {
 
   const userId = localStorage.getItem("userId");
 
-  // --- LOGOUT LOGIC ---
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      localStorage.clear(); // Clears userId and any other session data
-      navigate("/"); // Redirects to login page
+      localStorage.clear();
+      navigate("/");
     }
   };
+
   useEffect(() => {
     const fetchAndGenerateNotifications = async () => {
       if (!userId) {
@@ -25,26 +25,36 @@ const NotificationsPage = () => {
 
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
-        const user = await response.json();
+        
+        // 1. Fetch User Profile
+        const profileRes = await fetch(`http://localhost:5000/api/user/profile/${userId}`);
+        const user = await profileRes.json();
+
+        // 2. Fetch Renewal Applications (using user email)
+        let renewalData = { bluebooks: [], licenses: [] };
+        if (user.email) {
+          try {
+            const renewalRes = await fetch(`http://localhost:5000/api/renewals/my-renewals/${user.email}`);
+            const rData = await renewalRes.json();
+            renewalData = rData;
+          } catch (e) {
+            console.error("Renewal fetch failed", e);
+          }
+        }
 
         let generatedNotes = [];
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // --- 1. OFFICIAL DATA ALERTS (Only if Government Approved) ---
+        // --- SECTION A: OFFICIAL DATA ALERTS (Tax/Insurance Expiry) ---
         if (user.verificationStatus === 'Approved') {
-          
-          // Vehicle Alerts
           if (user.linkedVehicles && Array.isArray(user.linkedVehicles)) {
             user.linkedVehicles.forEach((vehicle) => {
               const vNum = vehicle.vehicleNumber;
 
-              // Tax Expiry
               if (vehicle.taxExpiryDate) {
                 const taxExp = new Date(vehicle.taxExpiryDate);
                 const diff = Math.ceil((taxExp - today) / (1000 * 60 * 60 * 24));
-
                 if (diff < 0) {
                   generatedNotes.push({
                     id: `tax-expired-${vNum}`,
@@ -68,11 +78,9 @@ const NotificationsPage = () => {
                 }
               }
 
-              // Insurance Expiry
               if (vehicle.insuranceExpiryDate) {
                 const insExp = new Date(vehicle.insuranceExpiryDate);
                 const diff = Math.ceil((insExp - today) / (1000 * 60 * 60 * 24));
-
                 if (diff < 0) {
                   generatedNotes.push({
                     id: `ins-expired-${vNum}`,
@@ -88,11 +96,9 @@ const NotificationsPage = () => {
             });
           }
 
-          // License Alerts
           if (user.linkedLicense && user.linkedLicense.expiryDate) {
             const lExp = new Date(user.linkedLicense.expiryDate);
             const diff = Math.ceil((lExp - today) / (1000 * 60 * 60 * 24));
-
             if (diff < 0) {
               generatedNotes.push({
                 id: 'license-expired',
@@ -107,57 +113,66 @@ const NotificationsPage = () => {
           }
         }
 
-        // --- 2. IDENTITY VERIFICATION STATUS (Your Specific Schema Logic) ---
-        let identityNote = {};
-        
+        // --- SECTION B: IDENTITY VERIFICATION STATUS ---
+        let identityNote = null;
         switch (user.verificationStatus) {
           case 'Approved':
-            identityNote = {
-              id: 'id-status',
-              title: "Identity Verified",
-              message: "Government Verification Successful: Your account is fully synced with transport records.",
-              time: "Official",
-              type: "info",
-              priority: 3,
-              read: true
-            };
+            identityNote = { id: 'id-status', title: "Identity Verified", message: "Government Verification Successful: Your account is synced.", time: "Official", type: "info", priority: 3, read: true };
             break;
           case 'Pending':
-            identityNote = {
-              id: 'id-status',
-              title: "Verification Pending",
-              message: `Your application (Citizenship: ${user.citizenshipNumber}) is currently being reviewed by officials.`,
-              time: "System",
-              type: "warning",
-              priority: 2,
-              read: false
-            };
+            identityNote = { id: 'id-status', title: "Verification Pending", message: `Application (ID: ${user.citizenshipNumber}) is under review.`, time: "System", type: "warning", priority: 2, read: false };
             break;
           case 'Rejected':
-            identityNote = {
-              id: 'id-status',
-              title: "Verification Rejected",
-              message: "Your identity form was rejected. Please re-check your Citizenship/License details and resubmit.",
+            identityNote = { id: 'id-status', title: "Verification Rejected", message: "Identity form rejected. Please re-check Citizenship/License details.", time: "Action Required", type: "urgent", priority: 1, read: false };
+            break;
+          default:
+            identityNote = { id: 'id-status', title: "Link Documents", message: "Please fill verification form to link your documents.", time: "System", type: "warning", priority: 2, read: false };
+        }
+        if (identityNote) generatedNotes.push(identityNote);
+
+        // --- SECTION C: RENEWAL APPLICATION ALERTS (REJECTIONS) ---
+        
+        // Check License Renewals
+        renewalData.licenses?.forEach((renewal) => {
+          if (renewal.status === 'rejected') {
+            generatedNotes.push({
+              id: `renewal-lic-${renewal._id}`,
+              title: "License Renewal Rejected",
+              message: `Rejected for License ${renewal.licenseNumber}. Reason: ${renewal.adminRemarks || 'Document clarity issues.'}`,
               time: "Action Required",
               type: "urgent",
               priority: 1,
               read: false
-            };
-            break;
-          default: // 'None'
-            identityNote = {
-              id: 'id-status',
-              title: "Link Documents",
-              message: "Please fill the verification form to link your License and Bluebook to this account.",
-              time: "System",
-              type: "warning",
-              priority: 2,
+            });
+          } else if (renewal.status === 'approved') {
+             generatedNotes.push({
+              id: `renewal-lic-ok-${renewal._id}`,
+              title: "Renewal Approved",
+              message: `Your License ${renewal.licenseNumber} renewal request has been approved.`,
+              time: "Official",
+              type: "info",
+              priority: 3,
               read: false
-            };
-        }
-        generatedNotes.push(identityNote);
+            });
+          }
+        });
 
-        // Final Sort: Urgent items first
+        // Check Bluebook/Insurance Renewals
+        renewalData.bluebooks?.forEach((renewal) => {
+          if (renewal.status === 'rejected') {
+            generatedNotes.push({
+              id: `renewal-bb-${renewal._id}`,
+              title: "Insurance Renewal Rejected",
+              message: `Rejected for Vehicle ${renewal.vehicleNumber}. Reason: ${renewal.adminRemarks || 'Invalid payment receipt.'}`,
+              time: "Action Required",
+              type: "urgent",
+              priority: 1,
+              read: false
+            });
+          }
+        });
+
+        // Final Sort: Priority 1 (Urgent) always at the top
         generatedNotes.sort((a, b) => a.priority - b.priority);
         setNotifications(generatedNotes);
 
@@ -180,14 +195,10 @@ const NotificationsPage = () => {
           <Link to="/documents" className="nav-link">📄 My Documents</Link>
           <Link to="/vehicles" className="nav-link">🚗 Vehicle Info</Link>
           <Link to="/notifications" className="nav-link active">🔔 Notifications</Link>
-          <Link to="/settings" className="nav-link">⚙️ Settings</Link>
+          <Link to="/settings" className="nav-link">⚙️ Info and Rate</Link>
         </nav>
-        {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
         <div className="mt-auto p-3 border-top">
-          <button 
-            onClick={handleLogout}
-            className="btn btn-outline-danger btn-sm w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
-          >
+          <button onClick={handleLogout} className="btn btn-outline-danger btn-sm w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
             <span>Logout</span>
             <i className="bi bi-box-arrow-right"></i> 
           </button>

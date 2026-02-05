@@ -1,149 +1,153 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const MAX_BYTES = 1 * 1024 * 1024; // 1 MB
 const API_BASE = "http://localhost:5000";
 
 export default function LicenseRenewForm({ onClose, onSuccess }) {
-  const [licenseNumber, setLicenseNumber] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [dob, setDob] = useState("");
-  const [prevExpiry, setPrevExpiry] = useState("");
-  const [licenseFile, setLicenseFile] = useState(null);
-  const [medicalFile, setMedicalFile] = useState(null);
-  const [receiptFile, setReceiptFile] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState("");
+  const userId = localStorage.getItem("userId");
+
+  const [formData, setFormData] = useState({
+    licenseNumber: "",
+    fullName: "",
+    email: "",
+  });
+
+  const [files, setFiles] = useState({
+    medical: null,
+    receipt: null
+  });
+
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [serverError, setServerError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const checkFileSize = (file) => {
-    if (!file) return null;
-    if (file.size > MAX_BYTES) return "File must be 1 MB or smaller.";
-    return null;
-  };
-
-  const handleFile = (setter, field) => (e) => {
-    setServerError("");
-    const f = e.target.files[0];
-    const err = checkFileSize(f);
-    if (err) {
-      setErrors((s) => ({ ...s, [field]: err }));
-      setter(null);
-      e.target.value = "";
-      return;
-    }
-    setErrors((s) => ({ ...s, [field]: null }));
-    setter(f);
-  };
-
-  const validateEmailFormat = (v) => {
-    if (!v) return "Email is required.";
-    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-    return ok ? null : "Enter a valid email.";
-  };
-
-  const validateClient = () => {
-    const newErrors = {};
-    if (!licenseNumber.trim()) newErrors.licenseNumber = "Required.";
-    if (!fullName.trim()) newErrors.fullName = "Required.";
-    const emailErr = validateEmailFormat(email);
-    if (emailErr) newErrors.email = emailErr;
-    if (!dob) newErrors.dob = "Required.";
-    if (!prevExpiry) newErrors.prevExpiry = "Required.";
-    if (!licenseFile) newErrors.licenseFile = "Upload license image (≤1MB).";
-    if (!medicalFile) newErrors.medicalFile = "Upload medical clearance (≤1MB).";
-    if (!receiptFile) newErrors.receiptFile = "Upload payment receipt (≤1MB).";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  // --- AUTO-FILL LOGIC ---
+  useEffect(() => {
+    const fetchVerifiedData = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/user/profile/${userId}`);
+        const user = res.data;
+        
+        // Extract license (Check Official first, then Applied fallback)
+        const autoLicense = user.linkedLicense?.licenseNumber || user.appliedLicenseNumber || "";
+        
+        setFormData({
+          licenseNumber: autoLicense, 
+          fullName: user.fullName || "",
+          email: user.email || "",
+        });
+        
+      } catch (err) {
+        console.error("Could not pre-fill data", err);
+      } finally {
+        setFetching(false);
+      }
+    };
+    if (userId) fetchVerifiedData();
+  }, [userId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setServerError("");
-    setSuccessMsg("");
-    if (!validateClient()) return;
-
-    const fd = new FormData();
-    fd.append("licenseNumber", licenseNumber);
-    fd.append("fullName", fullName);
-    fd.append("email", email);
-    fd.append("dob", dob);
-    fd.append("previousExpiry", prevExpiry);
-    fd.append("license", licenseFile);
-    fd.append("medical", medicalFile);
-    fd.append("receipt", receiptFile);
+    if (!files.medical || !files.receipt) {
+      setServerError("Please upload both required documents.");
+      return;
+    }
 
     setLoading(true);
+    const fd = new FormData();
+    fd.append("licenseNumber", formData.licenseNumber);
+    fd.append("fullName", formData.fullName);
+    fd.append("email", formData.email);
+    fd.append("medical", files.medical);
+    fd.append("receipt", files.receipt);
+
     try {
       const res = await fetch(`${API_BASE}/api/renewals/license`, {
         method: "POST",
-        body: fd
+        body: fd,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setServerError(data?.message || data?.error || "Upload failed");
-      } else {
-        setSuccessMsg("License renewal submitted successfully.");
+      if (res.ok) {
+        setSuccessMsg("✅ License renewal submitted successfully!");
         if (onSuccess) onSuccess();
-        setTimeout(() => { if (onClose) onClose(); }, 1000);
+        setTimeout(() => onClose(), 1500);
+      } else {
+        setServerError("Submission failed. Check your connection.");
       }
     } catch (err) {
-      setServerError(err.message || "Network error");
+      setServerError("Network error. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetching) return <div className="overlay"><div className="spinner-border text-light"></div></div>;
+
   return (
     <div className="overlay">
-      <div className="form-containers" role="dialog" aria-modal="true">
-        <div className="form-header">
-          <h2>License Renewal Form</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
+      <div className="card shadow border-0 p-0 overflow-hidden" style={{ maxWidth: '500px', width: '95%', borderRadius: '15px' }}>
+        
+        <div className="bg-primary text-white p-4 text-center position-relative">
+          <h4 className="fw-bold m-0">License Renewal</h4>
+          <p className="small opacity-75 m-0">Verified Digital Profile Update</p>
+          <button className="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-3 border-0" onClick={onClose}>✕</button>
         </div>
 
-        <form className="renew-form" onSubmit={handleSubmit}>
-          {serverError && <div className="error">{serverError}</div>}
-          {successMsg && <div className="success">{successMsg}</div>}
+        <form className="p-4" onSubmit={handleSubmit}>
+          {serverError && <div className="alert alert-danger py-2 small">{serverError}</div>}
+          {successMsg && <div className="alert alert-success py-2 small">{successMsg}</div>}
 
-          <label className="label">License Number</label>
-          <input className="input" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} />
-          {errors.licenseNumber && <div className="error">{errors.licenseNumber}</div>}
-
-          <label className="label">Full Name</label>
-          <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          {errors.fullName && <div className="error">{errors.fullName}</div>}
-
-          <label className="label">Email</label>
-          <input className="input" value={email} onChange={(e) => setEmail(e.target.value.trim())} placeholder="user@example.com" />
-          {errors.email && <div className="error">{errors.email}</div>}
-
-          <label className="label">Date of Birth</label>
-          <input className="input" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
-          {errors.dob && <div className="error">{errors.dob}</div>}
-
-          <label className="label">Previous Expiry Date</label>
-          <input className="input" type="date" value={prevExpiry} onChange={(e) => setPrevExpiry(e.target.value)} />
-          {errors.prevExpiry && <div className="error">{errors.prevExpiry}</div>}
-
-          <label className="label">Upload License Image <span className="muted">(max 1 MB)</span></label>
-          <input className="input" type="file" accept="image/*" onChange={handleFile(setLicenseFile, "licenseFile")} />
-          {errors.licenseFile && <div className="error">{errors.licenseFile}</div>}
-
-          <label className="label">Medical Clearance Image <span className="muted">(max 1 MB)</span></label>
-          <input className="input" type="file" accept="image/*,application/pdf" onChange={handleFile(setMedicalFile, "medicalFile")} />
-          {errors.medicalFile && <div className="error">{errors.medicalFile}</div>}
-
-          <label className="label">Upload Payment Receipt <span className="muted">(max 1 MB)</span></label>
-          <input className="input" type="file" accept="image/*,application/pdf" onChange={handleFile(setReceiptFile, "receiptFile")} />
-          {errors.receiptFile && <div className="error">{errors.receiptFile}</div>}
-
-          <div className="form-actions">
-            <button type="button" className="secondary-btn" onClick={onClose} disabled={loading}>Cancel</button>
-            <button type="submit" className="primary-btn" disabled={loading}>{loading ? "Uploading..." : "Confirm"}</button>
+          {/* License Number Input */}
+          <div className="mb-3">
+            <label className="form-label extra-small fw-bold text-muted text-uppercase">License Number</label>
+            <input 
+              type="text" 
+              className={`form-control ${formData.licenseNumber ? 'bg-primary-subtle fw-bold border-primary' : ''}`} 
+              value={formData.licenseNumber} 
+              onChange={(e) => setFormData({...formData, licenseNumber: e.target.value})}
+              readOnly={!!formData.licenseNumber} 
+              placeholder="Enter License Number"
+              required
+            />
+            {formData.licenseNumber && <div className="extra-small text-primary mt-1">Verified from profile</div>}
           </div>
+
+          {/* Full Name Input */}
+          <div className="mb-3">
+            <label className="form-label extra-small fw-bold text-muted text-uppercase">Full Name</label>
+            <input type="text" className="form-control bg-light" value={formData.fullName} readOnly />
+          </div>
+
+          <hr className="my-4" />
+
+          <h6 className="fw-bold mb-3"><i className="bi bi-file-earmark-medical me-2"></i>Required Documents</h6>
+          
+          <div className="mb-3">
+            <label className="form-label small fw-bold">1. Medical Report (Signed)</label>
+            <input 
+              type="file" 
+              className="form-control form-control-sm" 
+              accept="image/*,application/pdf" 
+              onChange={(e) => setFiles({...files, medical: e.target.files[0]})} 
+              required 
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="form-label small fw-bold">2. Payment Receipt</label>
+            <input 
+              type="file" 
+              className="form-control form-control-sm" 
+              accept="image/*,application/pdf" 
+              onChange={(e) => setFiles({...files, receipt: e.target.files[0]})} 
+              required 
+            />
+          </div>
+
+          <button type="submit" disabled={loading} className="btn btn-primary w-100 py-2 fw-bold shadow">
+            {loading ? "Processing..." : "Submit Renewal"}
+          </button>
         </form>
       </div>
     </div>

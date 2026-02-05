@@ -1,9 +1,8 @@
-// src/middleware/upload.js
 const multer = require('multer');
 
-const ONE_MB = 1 * 1024 * 1024;
+const FIVE_MB = 5 * 1024 * 1024;
 
-// Use memory storage so we can upload file buffer directly to Cloudinary
+// Use memory storage for Cloudinary buffer uploads
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
@@ -11,27 +10,35 @@ const fileFilter = (req, file, cb) => {
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPEG/PNG images and PDF are allowed'));
+    cb(new Error('Invalid file type. Only JPEG, PNG, and PDF are allowed.'));
   }
 };
 
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: ONE_MB } // per-file limit
+  limits: { fileSize: FIVE_MB } 
 });
 
-// fields expected for bluebook and license endpoints
+/**
+ * Matches BluebookRenewForm: 
+ * fd.append("insuranceDoc", ...), fd.append("receipt", ...), fd.append("pollutionDoc", ...)
+ */
 const bluebookUpload = upload.fields([
-  { name: 'bluebook', maxCount: 1 },
+  { name: 'insuranceDoc', maxCount: 1 }, // Changed from 'bluebook' to 'insuranceDoc'
   { name: 'receipt', maxCount: 1 },
   { name: 'pollutionDoc', maxCount: 1 }
 ]);
 
+/**
+ * Matches LicenseRenewForm:
+ * fd.append("medical", ...), fd.append("receipt", ...)
+ */
 const licenseUpload = upload.fields([
-  { name: 'license', maxCount: 1 },
   { name: 'medical', maxCount: 1 },
-  { name: 'receipt', maxCount: 1 }
+  { name: 'receipt', maxCount: 1 },
+  // Optional: keep 'license' here but don't require it in frontend
+  { name: 'license', maxCount: 1 } 
 ]);
 
-module.exports = { bluebookUpload, licenseUpload, ONE_MB };
+module.exports = { bluebookUpload, licenseUpload, FIVE_MB };

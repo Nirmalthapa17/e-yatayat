@@ -73,7 +73,7 @@ const UserDashboardPage = () => {
           <Link to="/documents" className="nav-link">📄 My Documents</Link>
           <Link to="/vehicles" className="nav-link">🚗 Vehicle Info</Link>
           <Link to="/notifications" className="nav-link">🔔 Notifications</Link>
-          <Link to="/settings" className="nav-link">⚙️ Settings</Link>
+          <Link to="/settings" className="nav-link">⚙️ Info and Rate</Link>
         </nav>
 
         {/* --- LOGOUT BUTTON AT SIDEBAR BOTTOM --- */}
