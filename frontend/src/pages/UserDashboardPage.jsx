@@ -4,7 +4,7 @@ import ProfilePreview from '../components/dashboard/ProfilePreview';
 import RenewalButtons from '../components/dashboard/RenewalButtons';
 import LicenseRenewForm from './LicenseRenewForm'; // Ensure path is correct
 import BluebookRenewForm from './BluebookRenewForm';
-
+import Chatbot from '../components/chatbot';
 const UserDashboardPage = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -184,6 +184,7 @@ const UserDashboardPage = () => {
           )}
         </div>
       </main>
+      <Chatbot /> 
     </div>
   );
 };
